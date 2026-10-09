@@ -1,6 +1,4 @@
-import api from "@/lib/api";
-
-const BACKEND = process.env.REACT_APP_BACKEND_URL;
+import api, { cleanBaseUrl as BACKEND } from "@/lib/api";
 
 export function fileUrl(path) {
   if (!path) return "";

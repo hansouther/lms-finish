@@ -42,6 +42,7 @@ services:
           memory: 1500M
     volumes:
       - backend_uploads:/app/uploads
+      - backend_storage:/app/storage_data
     expose: ["8001"]
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8001/api/"]
@@ -78,6 +79,7 @@ services:
 volumes:
   mongo_data:
   backend_uploads:
+  backend_storage:
 
 networks:
   lms:
