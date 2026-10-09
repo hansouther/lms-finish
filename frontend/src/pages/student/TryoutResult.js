@@ -3,6 +3,7 @@ import { CheckCircle2, XCircle, ArrowLeft, Trophy } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
 import { Loading } from "@/components/common/States";
 import { Button } from "@/components/ui/button";
+import MathText, { QuestionImage } from "@/components/common/MathText";
 
 const TYPE_LABEL = { single: "Pilihan Ganda", multiple: "Pilihan Ganda Kompleks", truefalse: "Benar/Salah", essay: "Esai" };
 
@@ -74,14 +75,15 @@ export default function TryoutResult() {
                   {pq.correct ? <CheckCircle2 className="h-5 w-5 text-[#10B981] shrink-0 mt-0.5" /> : <XCircle className="h-5 w-5 text-[#EF4444] shrink-0 mt-0.5" />}
                   <div>
                     <p className="text-[11px] font-semibold text-[#94A3B8]">Soal {i + 1} · {TYPE_LABEL[pq.type]}</p>
-                    <p className="mt-1 text-sm text-[#0A1128]">{pq.text}</p>
+                    <MathText as="div" text={pq.text} className="mt-1 block text-sm text-[#0A1128]" />
+                    <QuestionImage src={pq.image_url} className="mt-2 max-h-60" testid={`review-image-${i}`} />
                   </div>
                 </div>
                 <span className="font-mono2 text-sm font-bold shrink-0" style={{ color: pq.correct ? "#10B981" : "#EF4444" }}>{pq.earned}/{pq.points}</span>
               </div>
               <div className="mt-3 ml-8 grid sm:grid-cols-2 gap-2 text-sm">
-                <div className="rounded-lg bg-[#EFF6F8] px-3 py-2"><span className="text-xs text-[#94A3B8]">Jawaban Anda:</span> <span className="text-[#0A1128]">{at.student}</span></div>
-                <div className="rounded-lg bg-[#ECFDF5] px-3 py-2"><span className="text-xs text-[#94A3B8]">Kunci:</span> <span className="text-[#10B981] font-medium">{at.correct}</span></div>
+                <div className="rounded-lg bg-[#EFF6F8] px-3 py-2"><span className="text-xs text-[#94A3B8]">Jawaban Anda:</span> <MathText text={at.student} className="text-[#0A1128]" /></div>
+                <div className="rounded-lg bg-[#ECFDF5] px-3 py-2"><span className="text-xs text-[#94A3B8]">Kunci:</span> <MathText text={at.correct} className="text-[#10B981] font-medium" /></div>
               </div>
             </div>
           );

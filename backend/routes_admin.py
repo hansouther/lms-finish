@@ -14,6 +14,7 @@ from utils import new_id, now_iso
 from security import require_roles, hash_password
 from emailer import notify_new_tryout, notify_bid_accepted, notify_new_material
 from storage import put_object, MIME_TYPES, APP_NAME
+from routes_files import save_question_image, IMAGE_EXT
 import notifications
 import analysis
 import irt
@@ -122,6 +123,7 @@ async def _rescore_attempts(tryout_id: str, tryout: dict):
 class QuestionBody(BaseModel):
     type: str  # single | multiple | truefalse | essay
     text: str
+    image_url: Optional[str] = None
     options: List[dict] = []
     correct_answers: List[str] = []
     points: int = 1
@@ -859,28 +861,56 @@ def _row_to_question(row: dict, order: int):
             "points": points, "order": order, "competency": comp, "difficulty_label": dl}, None
 
 
+def _parse_sheet(data: bytes, fname: str):
+    rows = []
+    if fname.endswith(".xlsx") or fname.endswith(".xls"):
+        wb = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+        ws = wb.active
+        headers = None
+        for r in ws.iter_rows(values_only=True):
+            if headers is None:
+                headers = [str(c).strip().lower() if c is not None else "" for c in r]
+                continue
+            if all(c is None or str(c).strip() == "" for c in r):
+                continue
+            rows.append({headers[i]: r[i] for i in range(len(headers)) if i < len(r)})
+    else:
+        text = data.decode("utf-8-sig", errors="ignore")
+        for r in csv.DictReader(io.StringIO(text)):
+            rows.append({(k or "").strip().lower(): v for k, v in r.items()})
+    return rows
+
+
+def _parse_zip(data: bytes):
+    images, sheet, sheet_name = {}, None, ""
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        for info in zf.infolist():
+            name = info.filename
+            base = name.replace("\\", "/").split("/")[-1]
+            if info.is_dir() or not base or name.startswith("__MACOSX") or base.startswith("."):
+                continue
+            low = base.lower()
+            if low.endswith((".xlsx", ".xls", ".csv")) and sheet is None:
+                sheet, sheet_name = zf.read(info), low
+            elif low.rsplit(".", 1)[-1] in IMAGE_EXT:
+                images[low] = (base, zf.read(info))
+    if sheet is None:
+        raise ValueError("ZIP harus berisi 1 file Excel (.xlsx) atau CSV")
+    return _parse_sheet(sheet, sheet_name), images
+
+
 @router.post("/tryouts/{tryout_id}/questions/import")
 async def import_questions(tryout_id: str, file: UploadFile = File(...), user: dict = Depends(admin_only)):
     if not await db.tryouts.find_one({"id": tryout_id}):
         raise HTTPException(status_code=404, detail="Try Out tidak ditemukan")
     data = await file.read()
     fname = (file.filename or "").lower()
-    rows = []
+    images = {}
     try:
-        if fname.endswith(".xlsx") or fname.endswith(".xls"):
-            wb = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
-            ws = wb.active
-            headers = None
-            for r in ws.iter_rows(values_only=True):
-                if headers is None:
-                    headers = [str(c).strip().lower() if c is not None else "" for c in r]
-                    continue
-                rows.append({headers[i]: r[i] for i in range(len(headers)) if i < len(r)})
+        if fname.endswith(".zip"):
+            rows, images = _parse_zip(data)
         else:
-            text = data.decode("utf-8-sig", errors="ignore")
-            reader = csv.DictReader(io.StringIO(text))
-            for r in reader:
-                rows.append({(k or "").strip().lower(): v for k, v in r.items()})
+            rows = _parse_sheet(data, fname)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Gagal membaca berkas: {e}")
 
@@ -891,6 +921,19 @@ async def import_questions(tryout_id: str, file: UploadFile = File(...), user: d
         if err:
             errors.append(f"Baris {idx + 2}: {err}")
             continue
+        img = str(row.get("gambar") or row.get("image") or row.get("image_url") or "").strip()
+        q["image_url"] = None
+        if img:
+            if img.startswith(("https://", "http://", "/api/")):
+                q["image_url"] = img
+            elif img.split("/")[-1].lower() in images:
+                base, blob = images[img.split("/")[-1].lower()]
+                try:
+                    q["image_url"] = await save_question_image(base, blob, user["id"])
+                except Exception as e:
+                    errors.append(f"Baris {idx + 2}: gambar {img!r} gagal diunggah ({e}), soal tetap diimpor tanpa gambar")
+            else:
+                errors.append(f"Baris {idx + 2}: gambar {img!r} tidak ditemukan (unggah sebagai ZIP berisi Excel + gambar), soal tetap diimpor tanpa gambar")
         q["id"] = new_id()
         q["tryout_id"] = tryout_id
         q.update({"irt_a": None, "irt_b": None, "irt_c": None, "irt_calibrated": False,
@@ -903,11 +946,13 @@ async def import_questions(tryout_id: str, file: UploadFile = File(...), user: d
 @router.get("/questions/template")
 async def questions_template(user: dict = Depends(admin_only)):
     csv_text = (
-        "type,text,option_a,option_b,option_c,option_d,correct,points,competency,tingkat\n"
-        "single,\"Berapa hasil 2+2?\",3,4,5,6,B,10,numerasi,mudah\n"
-        "multiple,\"Pilih bilangan genap\",2,3,4,5,\"A;C\",10,numerasi,sedang\n"
-        "truefalse,\"Bumi berbentuk bulat\",,,,,benar,10,literasi,mudah\n"
-        "essay,\"Ibu kota Indonesia?\",,,,,\"jakarta|dki jakarta\",10,literasi,sulit\n"
+        "type,text,option_a,option_b,option_c,option_d,correct,points,competency,tingkat,gambar\n"
+        "single,\"Berapa hasil 2+2?\",3,4,5,6,B,10,numerasi,mudah,\n"
+        "single,\"Hasil dari $\\frac{1}{2} + \\frac{1}{3}$ adalah ...\",$\\frac{5}{6}$,$\\frac{2}{5}$,$\\frac{1}{6}$,$\\frac{3}{5}$,A,10,numerasi,sedang,\n"
+        "multiple,\"Pilih bilangan genap\",2,3,4,5,\"A;C\",10,numerasi,sedang,\n"
+        "single,\"Perhatikan gambar. Luas segitiga tersebut adalah ...\",$12\\text{ cm}^2$,$24\\text{ cm}^2$,$6\\text{ cm}^2$,$18\\text{ cm}^2$,A,10,numerasi,sedang,segitiga.png\n"
+        "truefalse,\"Bumi berbentuk bulat\",,,,,benar,10,literasi,mudah,\n"
+        "essay,\"Ibu kota Indonesia?\",,,,,\"jakarta|dki jakarta\",10,literasi,sulit,\n"
     )
     return Response(content=csv_text, media_type="text/csv",
                     headers={"Content-Disposition": "attachment; filename=template_soal.csv"})
@@ -920,13 +965,16 @@ async def questions_template_xlsx(user: dict = Depends(admin_only)):
     ws = wb.active
     ws.title = "Soal"
     headers = ["type", "text", "option_a", "option_b", "option_c", "option_d",
-               "option_e", "correct", "points", "competency", "tingkat"]
+               "option_e", "correct", "points", "competency", "tingkat", "gambar"]
     ws.append(headers)
     samples = [
-        ["single", "Berapa hasil 2+2?", "3", "4", "5", "6", "", "B", 10, "numerasi", "mudah"],
-        ["multiple", "Pilih bilangan genap", "2", "3", "4", "5", "", "A;C", 10, "numerasi", "sedang"],
-        ["truefalse", "Bumi berbentuk bulat", "", "", "", "", "", "benar", 10, "literasi", "mudah"],
-        ["essay", "Ibu kota Indonesia?", "", "", "", "", "", "jakarta|dki jakarta", 10, "literasi", "sulit"],
+        ["single", "Berapa hasil 2+2?", "3", "4", "5", "6", "", "B", 10, "numerasi", "mudah", ""],
+        ["single", r"Hasil dari $\frac{1}{2} + \frac{1}{3}$ adalah ...", r"$\frac{5}{6}$", r"$\frac{2}{5}$", r"$\frac{1}{6}$", r"$\frac{3}{5}$", "", "A", 10, "numerasi", "sedang", ""],
+        ["single", r"Akar-akar dari $$x^2 - 5x + 6 = 0$$ adalah ...", r"$x=2$ dan $x=3$", r"$x=-2$ dan $x=-3$", r"$x=1$ dan $x=6$", r"$x=-1$ dan $x=6$", "", "A", 10, "numerasi", "sulit", ""],
+        ["single", "Perhatikan gambar. Luas segitiga tersebut adalah ...", r"$12\text{ cm}^2$", r"$24\text{ cm}^2$", r"$6\text{ cm}^2$", r"$18\text{ cm}^2$", "", "A", 10, "numerasi", "sedang", "segitiga.png"],
+        ["multiple", "Pilih bilangan genap", "2", "3", "4", "5", "", "A;C", 10, "numerasi", "sedang", ""],
+        ["truefalse", "Bumi berbentuk bulat", "", "", "", "", "", "benar", 10, "literasi", "mudah", ""],
+        ["essay", "Ibu kota Indonesia?", "", "", "", "", "", "jakarta|dki jakarta", 10, "literasi", "sulit", ""],
     ]
     for row in samples:
         ws.append(row)
@@ -946,6 +994,15 @@ async def questions_template_xlsx(user: dict = Depends(admin_only)):
         ["points", "Poin/bobot soal (angka)"],
         ["competency", "numerasi | literasi | umum (untuk laporan AKM)"],
         ["tingkat", "Tingkat kesulitan IRT: mudah | sedang | sulit"],
+        ["gambar", "OPSIONAL. Isi nama file gambar (mis. segitiga.png) lalu unggah ZIP berisi file Excel ini + semua gambarnya. Bisa juga diisi link https://... Kosongkan bila soal tanpa gambar."],
+        [""],
+        ["Rumus Matematika (LaTeX)", "Tulis rumus di antara tanda $...$ (sebaris) atau $$...$$ (baris sendiri). Berlaku di kolom text & option."],
+        ["Contoh pecahan", r"$\frac{a}{b}$"],
+        ["Contoh pangkat & akar", r"$x^2 + \sqrt{y} = \sqrt[3]{27}$"],
+        ["Contoh integral & limit", r"$$\int_0^1 x^2\,dx = \frac{1}{3}$$   $\lim_{x \to 0} \frac{\sin x}{x} = 1$"],
+        ["Contoh simbol", r"$\alpha, \beta, \pi, \theta, \le, \ge, \ne, \times, \div, \pm, \infty$"],
+        ["Contoh matriks", r"$\begin{pmatrix} 1 & 2 \\ 3 & 4 \end{pmatrix}$"],
+        ["Tanda dolar biasa", r"Tulis \$ untuk menampilkan simbol $ (mis. harga \$5)"],
         [""],
         ["Rekomendasi komposisi IRT", "±30% Mudah, 40% Sedang, 30% Sulit"],
         ["Catatan", "Parameter IRT (a,b,c) akan dikalibrasi otomatis dari hasil jawaban peserta."],
@@ -953,7 +1010,7 @@ async def questions_template_xlsx(user: dict = Depends(admin_only)):
     for row in guide:
         info.append(row)
     info.column_dimensions["A"].width = 24
-    info.column_dimensions["B"].width = 80
+    info.column_dimensions["B"].width = 100
 
     buf = io.BytesIO()
     wb.save(buf)

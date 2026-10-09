@@ -428,6 +428,7 @@ async def attempt_detail(attempt_id: str, user: dict = Depends(student_only)):
         q = qmap.get(pq["question_id"])
         if q:
             pq["text"] = q["text"]
+            pq["image_url"] = q.get("image_url")
             pq["options"] = q.get("options", [])
     attempt["tryout"] = t
     return attempt

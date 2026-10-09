@@ -11,6 +11,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import MathText, { QuestionImage } from "@/components/common/MathText";
 import { toast } from "sonner";
 
 function fmtTime(s) {
@@ -120,21 +121,22 @@ export default function TryoutEngine() {
             <span className="rounded-full bg-[#E6F5F8] text-[#0E7490] px-3 py-1 text-xs font-bold">Soal {idx + 1} / {tryout.questions.length}</span>
             <span className="text-xs text-[#94A3B8] font-mono2">{q.points} poin · {({ single: "Pilihan Ganda", multiple: "Pilihan Ganda Kompleks", truefalse: "Benar/Salah", essay: "Esai" })[q.type]}</span>
           </div>
-          <p className="mt-5 text-lg text-[#0A1128] leading-relaxed">{q.text}</p>
+          <MathText as="div" text={q.text} className="mt-5 block text-lg text-[#0A1128] leading-relaxed" data-testid="exam-question-text" />
+          <QuestionImage src={q.image_url} className="mt-4" testid="exam-question-image" />
 
           <div className="mt-6 space-y-3">
             {q.type === "single" && (
               <RadioGroup value={val[0] || ""} onValueChange={(v) => setVal([v])}>
                 {q.options.map((o) => (
                   <label key={o.id} className={`flex items-center gap-3 rounded-xl border p-4 cursor-pointer transition-colors duration-200 ${val[0] === o.id ? "border-[#0E7490] bg-[#E6F5F8]" : "border-[#E2E8F0] hover:bg-[#EFF6F8]"}`} data-testid={`opt-${o.id}`}>
-                    <RadioGroupItem value={o.id} /> <span className="text-sm text-[#0A1128]">{o.text}</span>
+                    <RadioGroupItem value={o.id} /> <MathText text={o.text} className="text-sm text-[#0A1128]" />
                   </label>
                 ))}
               </RadioGroup>
             )}
             {q.type === "multiple" && q.options.map((o) => (
               <label key={o.id} className={`flex items-center gap-3 rounded-xl border p-4 cursor-pointer transition-colors duration-200 ${val.includes(o.id) ? "border-[#0E7490] bg-[#E6F5F8]" : "border-[#E2E8F0] hover:bg-[#EFF6F8]"}`} data-testid={`opt-${o.id}`}>
-                <Checkbox checked={val.includes(o.id)} onCheckedChange={() => toggleMulti(o.id)} /> <span className="text-sm text-[#0A1128]">{o.text}</span>
+                <Checkbox checked={val.includes(o.id)} onCheckedChange={() => toggleMulti(o.id)} /> <MathText text={o.text} className="text-sm text-[#0A1128]" />
               </label>
             ))}
             {q.type === "truefalse" && (

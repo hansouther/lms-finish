@@ -88,3 +88,6 @@ h1, h2, h3, h4, h5, h6, .font-head {
     background: rgba(14, 116, 144, 0.18);
     color: #0a1128;
 }
+
+.math-text .katex-display { margin: 0.5em 0; overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+.math-text .katex { font-size: 1.08em; }

@@ -14,6 +14,7 @@ def strip_answers(q: dict) -> dict:
         "id": q["id"],
         "type": q["type"],
         "text": q["text"],
+        "image_url": q.get("image_url"),
         "options": q.get("options", []),
         "points": q.get("points", 1),
         "order": q.get("order", 0),

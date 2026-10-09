@@ -1,12 +1,13 @@
 import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, HelpCircle, CheckCircle2, X, Upload, FileDown, Tag, FileSpreadsheet, Gauge } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, HelpCircle, CheckCircle2, X, Upload, FileDown, Tag, FileSpreadsheet, Gauge, ImagePlus, Sigma, Loader2 } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
 import api, { apiError } from "@/lib/api";
 import { Loading, Empty } from "@/components/common/States";
 import ConfirmButton from "@/components/common/ConfirmButton";
 import IrtBlueprintPanel from "@/components/common/IrtBlueprintPanel";
 import IrtScaleCard from "@/components/common/IrtScaleCard";
+import MathText, { QuestionImage } from "@/components/common/MathText";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,7 +40,7 @@ const DIFF_LABEL = { mudah: "Mudah", sedang: "Sedang", sulit: "Sulit" };
 const DIFF_COLOR = { mudah: "#10B981", sedang: "#C9A227", sulit: "#EF4444" };
 const effDiff = (q) => (q.irt_calibrated && q.irt_b != null) ? (q.irt_b < -0.5 ? "mudah" : q.irt_b > 0.5 ? "sulit" : "sedang") : (q.difficulty_label || "sedang");
 const newOpts = () => [{ id: "o1", text: "" }, { id: "o2", text: "" }, { id: "o3", text: "" }, { id: "o4", text: "" }];
-const EMPTY = { type: "single", text: "", points: 20, options: newOpts(), correct: [], essay: "", competency: "umum", difficulty: "sedang" };
+const EMPTY = { type: "single", text: "", points: 20, options: newOpts(), correct: [], essay: "", competency: "umum", difficulty: "sedang", image_url: null };
 
 export default function TryoutBuilder() {
   const { id } = useParams();
@@ -49,6 +50,8 @@ export default function TryoutBuilder() {
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
   const fileRef = useRef();
+  const imgRef = useRef();
+  const [imgUploading, setImgUploading] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [bulkComp, setBulkComp] = useState("numerasi");
   const [bulkDiff, setBulkDiff] = useState("sedang");
@@ -130,6 +133,7 @@ export default function TryoutBuilder() {
       essay: q.type === "essay" ? (q.correct_answers || []).join(", ") : "",
       competency: q.competency || "umum",
       difficulty: q.difficulty_label || "sedang",
+      image_url: q.image_url || null,
     });
     setEditId(q.id); setOpen(true);
   };
@@ -154,12 +158,27 @@ export default function TryoutBuilder() {
       correct_answers = form.essay.split(",").map((s) => s.trim()).filter(Boolean);
       if (!correct_answers.length) return toast.error("Isi kunci jawaban esai");
     }
-    const payload = { type: form.type, text: form.text, options, correct_answers, points: parseInt(form.points || 1, 10), order: 0, competency: form.competency || "umum", difficulty_label: form.difficulty || "sedang" };
+    const payload = { type: form.type, text: form.text, options, correct_answers, points: parseInt(form.points || 1, 10), order: 0, competency: form.competency || "umum", difficulty_label: form.difficulty || "sedang", image_url: form.image_url || null };
     try {
       if (editId) await api.put(`/admin/questions/${editId}`, payload);
       else await api.post(`/admin/tryouts/${id}/questions`, payload);
       toast.success("Soal tersimpan"); setOpen(false); refetch(); bumpBlueprint();
     } catch (e) { toast.error(apiError(e)); }
+  };
+  const onPickImage = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return toast.error("Ukuran gambar maksimal 5 MB");
+    const fd = new FormData();
+    fd.append("file", file);
+    setImgUploading(true);
+    try {
+      const { data } = await api.post("/questions/upload-image", fd);
+      setForm((f) => ({ ...f, image_url: data.url }));
+      toast.success("Gambar ditambahkan");
+    } catch (err) { toast.error(apiError(err)); }
+    finally { setImgUploading(false); }
   };
   const del = async (qid) => { try { await api.delete(`/admin/questions/${qid}`); toast.success("Soal dihapus"); refetch(); bumpBlueprint(); } catch (e) { toast.error(apiError(e)); } };
 
@@ -176,8 +195,8 @@ export default function TryoutBuilder() {
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" onClick={downloadTemplate} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="download-template"><FileDown className="h-4 w-4" /> Template CSV</Button>
           <Button variant="outline" onClick={downloadTemplateXlsx} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="download-template-xlsx"><FileSpreadsheet className="h-4 w-4" /> Template Excel</Button>
-          <Button variant="outline" onClick={() => fileRef.current?.click()} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="import-questions"><Upload className="h-4 w-4" /> Impor CSV/Excel</Button>
-          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={onImport} data-testid="import-file" />
+          <Button variant="outline" onClick={() => fileRef.current?.click()} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="import-questions"><Upload className="h-4 w-4" /> Impor CSV/Excel/ZIP</Button>
+          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.zip" className="hidden" onChange={onImport} data-testid="import-file" />
           <Button onClick={openNew} className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" data-testid="add-question-btn"><Plus className="h-4 w-4" /> Tambah Soal</Button>
         </div>
       </div>
@@ -232,7 +251,8 @@ export default function TryoutBuilder() {
                       <span className="rounded-full bg-[#0A1128] text-white/90 px-2 py-0.5 text-[10px] font-mono" data-testid={`question-irt-${q.id}`} title="Parameter IRT 3PL (daya pembeda a, kesulitan b, tebakan c)">IRT a={Number(q.irt_a).toFixed(2)} b={Number(q.irt_b).toFixed(2)} c={Number(q.irt_c).toFixed(2)}</span>
                     )}
                   </div>
-                  <p className="mt-2 text-[#0A1128]">{q.text}</p>
+                  <MathText as="div" text={q.text} className="mt-2 block text-[#0A1128]" data-testid={`question-text-${q.id}`} />
+                  <QuestionImage src={q.image_url} className="mt-3 max-h-56" testid={`question-image-${q.id}`} />
                   <div className="mt-3 space-y-1">
                     {q.type === "essay" ? (
                       <p className="text-sm text-[#10B981]">Kunci: {q.correct_answers.join(" / ")}</p>
@@ -241,7 +261,7 @@ export default function TryoutBuilder() {
                     ) : (
                       q.options.map((o) => (
                         <div key={o.id} className={`text-sm flex items-center gap-2 ${q.correct_answers.includes(o.id) ? "text-[#10B981] font-medium" : "text-[#475569]"}`}>
-                          {q.correct_answers.includes(o.id) ? <CheckCircle2 className="h-3.5 w-3.5" /> : <span className="h-3.5 w-3.5 rounded-full border border-[#CBD5E1]" />} {o.text}
+                          {q.correct_answers.includes(o.id) ? <CheckCircle2 className="h-3.5 w-3.5" /> : <span className="h-3.5 w-3.5 rounded-full border border-[#CBD5E1]" />} <MathText text={o.text} />
                         </div>
                       ))
                     )}
@@ -259,7 +279,7 @@ export default function TryoutBuilder() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editId ? "Edit Soal" : "Tambah Soal"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -286,7 +306,27 @@ export default function TryoutBuilder() {
               </div>
             </div>
             <p className="-mt-2 text-xs text-[#94A3B8]">Kompetensi untuk laporan Numerasi vs Literasi. Tingkat kesulitan jadi acuan komposisi IRT (parameter a/b/c dikalibrasi otomatis dari jawaban peserta).</p>
-            <div><Label>Pertanyaan</Label><Textarea value={form.text} onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))} className="mt-1.5" rows={3} data-testid="question-text" /></div>
+            <div><Label>Pertanyaan</Label><Textarea value={form.text} onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))} className="mt-1.5 font-mono2 text-sm" rows={4} data-testid="question-text" placeholder="Contoh: Hasil dari $\frac{1}{2} + \frac{1}{3}$ adalah ..." />
+              <p className="mt-1 text-xs text-[#94A3B8] flex items-start gap-1"><Sigma className="h-3.5 w-3.5 mt-0.5 shrink-0" /><span>Rumus: tulis di antara <code>$...$</code> (sebaris) atau <code>$$...$$</code> (baris sendiri). Contoh <code>{"$x^2$"}</code>, <code>{"$\\sqrt{2}$"}</code>, <code>{"$\\frac{a}{b}$"}</code>. Ketik <code>\$</code> untuk simbol dolar biasa. Berlaku juga di pilihan jawaban.</span></p>
+            </div>
+
+            <div data-testid="question-image-field">
+              <Label>Gambar Soal <span className="text-[#94A3B8] font-normal">(opsional)</span></Label>
+              <input ref={imgRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" className="hidden" onChange={onPickImage} data-testid="question-image-input" />
+              {form.image_url ? (
+                <div className="mt-2 flex items-start gap-3">
+                  <QuestionImage src={form.image_url} className="max-h-48" testid="question-image-preview" />
+                  <div className="flex flex-col gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => imgRef.current?.click()} disabled={imgUploading} className="rounded-full" data-testid="question-image-replace">{imgUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />} Ganti</Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setForm((f) => ({ ...f, image_url: null }))} className="rounded-full text-red-600 hover:bg-red-50" data-testid="question-image-remove"><X className="h-4 w-4" /> Hapus</Button>
+                  </div>
+                </div>
+              ) : (
+                <Button type="button" variant="outline" onClick={() => imgRef.current?.click()} disabled={imgUploading} className="mt-1.5 w-full border-dashed rounded-xl h-16 text-[#475569] hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="question-image-upload">
+                  {imgUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />} {imgUploading ? "Mengunggah..." : "Tambah gambar (PNG/JPG/GIF/WEBP/SVG, maks 5 MB)"}
+                </Button>
+              )}
+            </div>
 
             {(form.type === "single" || form.type === "multiple") && (
               <div>
@@ -330,6 +370,21 @@ export default function TryoutBuilder() {
                 <Label>Kunci Jawaban (pisahkan alternatif dengan koma)</Label>
                 <Input value={form.essay} onChange={(e) => setForm((f) => ({ ...f, essay: e.target.value }))} placeholder="jakarta, dki jakarta" className="mt-1.5" data-testid="essay-key" />
                 <p className="mt-1 text-xs text-[#94A3B8]">Penilaian mengabaikan huruf besar/kecil & spasi di awal/akhir.</p>
+              </div>
+            )}
+
+            {(form.text.trim() || form.image_url) && (
+              <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4" data-testid="question-preview">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#94A3B8] mb-2">Pratinjau tampilan siswa</p>
+                <MathText as="div" text={form.text} className="block text-[#0A1128]" />
+                <QuestionImage src={form.image_url} className="mt-3 max-h-48" />
+                {(form.type === "single" || form.type === "multiple") && (
+                  <div className="mt-3 space-y-1.5">
+                    {form.options.filter((o) => o.text.trim()).map((o) => (
+                      <div key={o.id} className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm"><MathText text={o.text} /></div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
