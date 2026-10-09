@@ -8,3 +8,7 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - deploy/dcloud/backend.env.example & frontend/env.example lengkap
 ## Backlog
 - Audit repo kedua LMS-test1 (private, belum bisa di-clone)
+## Iteration 2 (Jun 2026)
+- Audit repo kedua LMS-test1: versi lama (tanpa IRT/Midtrans), sisa jejak Emergent sama + bug subjek email + requirements berat (pandas/numpy/jq). Rekomendasi: deploy dari repo pertama yg sudah dibersihkan.
+- Gambar soal opsional (form manual + kolom `gambar` di template CSV/Excel + impor ZIP berisi Excel+gambar), endpoint publik /api/question-images/{name}
+- Rumus matematika KaTeX ($...$, $$...$$, \(..\), \[..\]) di builder (pratinjau), CBT siswa, pembahasan

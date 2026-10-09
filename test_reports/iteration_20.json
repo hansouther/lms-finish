@@ -1,0 +1,30 @@
+{
+  "summary": "Verified NEW features: optional question image upload + KaTeX math rendering across admin (TryoutBuilder), bulk import (CSV/XLSX/ZIP), student (TryoutEngine/Result), and public image endpoint. 7/7 backend tests PASS (test_iter20_math_image.py). Frontend Playwright E2E PASS: KaTeX renders in preview (4 renders), list shows 14 .katex nodes and 7 images actually loading (naturalWidth=120). Image upload via hidden input works, remove works, save closes dialog and persists both with- and without-image. Invalid LaTeX ($\\frac{1$) renders .katex-error without crashing the page. ZIP import attaches gambar.png to imported questions and the returned /api/question-images/<name> URL is publicly fetchable without auth and returns image/* content-type. Non-image upload (.txt) returns 400. Student endpoint GET /api/student/tryouts/{id} returns questions with image_url field (and no correct_answers leak).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "TryoutBuilder dialog", "issues": ["DialogContent missing aria-describedby (console warning) - a11y nit"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter20_math_image.py",
+    "/app/test_reports/pytest/iter20.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "renderMath uses dangerouslySetInnerHTML with katex trust:false and strict:'ignore' + throwOnError:false — safe; however esc() does not escape single-quote which is fine for attributes using double quotes here.",
+    "QuestionImage uses fileUrl(src); for /api/question-images/* this concatenates REACT_APP_BACKEND_URL correctly. Caching headers set (max-age=86400) with CSP default-src 'none' + style-src 'unsafe-inline' for SVG — good.",
+    "routes_admin.py _parse_zip resolves image file by basename lowercase match — works for flat ZIPs. For nested paths users must include basename in the 'gambar' column (already documented in instructions sheet).",
+    "Template route is /api/admin/questions/template(.xlsx), not under /tryouts — review request referenced it loosely; main agent should double-check that the frontend TryoutBuilder calls the correct URL (verified via DOM fetch during test — status 200 for both)."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter20_math_image.py"],
+  "success_rate": {"backend": "100% (7/7)", "frontend": "100% (all E2E assertions passed)"},
+  "test_credentials": "admin@lms.id / Admin@12345 (from backend/.env)",
+  "seed_data_creation": "Added ~3 test questions to tryout 'to_3' (one TEST_MATH question with image via UI; two TEST_IMPORT questions via ZIP import, one with pic.png attached). Safe to leave or delete.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Templates live at /api/admin/questions/template and /api/admin/questions/template.xlsx (not under /tryouts). Image public endpoint: /api/question-images/{name} (no auth). Image upload: POST /api/questions/upload-image (admin/tutor only, 400 for non-image ext, 5MB cap). Student questions in GET /api/student/tryouts/{id} under 'questions'; image_url included; correct_answers stripped. Register body uses 'name' not 'full_name' and ignores role (always student). Tryout builder route: /admin/tryouts/:id/builder (NOT /questions).",
+  "rca of the issue": "N/A — no bugs found"
+}
