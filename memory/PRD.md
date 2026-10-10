@@ -50,3 +50,8 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - PseudoFullscreenGate untuk iPhone/in-app browser/browser tanpa Fullscreen API + rekomendasi Chrome/Android
 - Pelanggaran tetap memakai peringatan admin (tab_warning_limit) + auto-submit existing
 - Backlog: mode kiosk PWA, deteksi split-screen/floating window Android
+
+## Update Jun 2026 — PWA + Deteksi Layar Terbagi
+- PWA: manifest (fullscreen, ikon 192/512), sw.js, apple-touch-icon; InstallAppBanner di /student/tryouts (Android prompt, iOS panduan Add to Home Screen)
+- useSplitScreenGuard: deteksi split-screen/jendela mengambang (viewport <60% layar, abaikan saat mengetik) + window blur >1.5s → peringatan existing; SplitScreenOverlay; dedupe 2.5s
+- Backlog: riwayat pelanggaran detail untuk admin

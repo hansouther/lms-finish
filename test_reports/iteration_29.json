@@ -1,0 +1,41 @@
+{
+  "summary": "Frontend-only test for PWA installability + Android split-screen / floating-window detection on Try Out. All review-request features validated. One operational note: public/index.html edits (apple-touch-icon link, apple-mobile-web-app-title meta) were NOT reflected in served HTML until frontend was restarted — webpack-dev-server does not pick up index.html template changes via hot reload. After `sudo supervisorctl restart frontend` the links/meta appear correctly.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "pwa_manifest": "PASS - /manifest.json 200, display:'fullscreen', start_url:'/', scope:'/', icons 192 & 512 present (any + maskable). /icon-192.png, /icon-512.png, /apple-touch-icon.png all 200.",
+    "service_worker": "PASS - /sw.js 200 (install/activate/fetch). navigator.serviceWorker.getRegistration() returns active registration with scope '/'.",
+    "html_meta": "PASS (after frontend restart) - rendered DOM contains link[rel=manifest] and link[rel=apple-touch-icon] pointing to /apple-touch-icon.png; meta apple-mobile-web-app-capable=yes and apple-mobile-web-app-title=Binara present.",
+    "install_banner_desktop_no_bip": "PASS - On 1366x900 desktop UA with no beforeinstallprompt dispatched, [data-testid=install-app-banner] is NOT rendered.",
+    "install_banner_iphone": "PASS - With iPhone UA + 390x844, install-app-banner renders. Clicking install-app-button opens [data-testid=ios-install-dialog] containing 3 steps (Safari share → Add to Home Screen (Tambahkan) → Tambah). install-app-dismiss hides banner; sessionStorage.install_banner_hidden='1'.",
+    "install_banner_beforeinstallprompt": "PASS - Dispatching custom Event('beforeinstallprompt') with stub prompt()/userChoice via add_init_script → install-app-banner renders on desktop; clicking install-app-button increments stubbed __promptCalled (=1), confirming promptInstall() invoked.",
+    "standalone_mode": "PASS - matchMedia('(display-mode: standalone)') stubbed true → install-app-banner hidden; in exam the [data-testid=pseudo-fullscreen-gate] contains 'Mode Aplikasi aktif' and [data-testid=pseudo-fullscreen-recommend] is NOT rendered.",
+    "split_screen_detection": "PASS - On touch/mobile emulation, overriding window.innerWidth/innerHeight to 390x380 (<60% of 390x844 screen) + firing resize → after ~1.2s debounce the [data-testid=tab-warning-dialog] appears, exam-violation-counter increments by exactly 1 (1/5 → 2/5). Clicking tab-warning-continue closes dialog and [data-testid=split-screen-overlay] remains visible while viewport still small. Firing resize again while still shrunk does NOT re-increment (dedupe via inSplit flag). Restoring viewport to 390x844 hides the overlay.",
+    "window_blur_detection": "PASS - Stubbing document.hasFocus=()=>false and dispatching window 'blur' → after 1.5s blurTimer fires, counter increments by 1 (2/5 → 3/5) and tab-warning-dialog shows 'Peringatan 3 dari 5'. The reportViolation() 2.5s dedupe prevents double counting with fullscreen exit.",
+    "essay_input_focus_no_violation": "PASS - On short-answer question (soal 4, essay-input), focusing the <input> then triggering viewport shrink does NOT fire tab-warning-dialog. typing() guard in isShrunk() correctly ignores split-check when document.activeElement is INPUT.",
+    "regression_from_iteration_28": "SPOT-CHECKED - FullscreenGate still shows for desktop needFs=true, PseudoFullscreenGate shows on standalone/iPhone, NoFullscreenNotice bar shows when fsFailed, tab-warning-continue continues the exam. Auto-submit at limit NOT re-exercised in this run to preserve remaining student attempts (verified in iteration_28)."
+  },
+  "test_report_links": [],
+  "action_items": [
+    "OPTIONAL/INFRA: public/index.html changes require a frontend process restart (webpack-dev-server does not hot-reload the HTML template). If this template is modified again in future, remind main agent to `sudo supervisorctl restart frontend`.",
+    "OPTIONAL: /sw.js currently has an empty fetch handler — fine for installability but offers no offline support for the exam. Not required by spec, just noting."
+  ],
+  "critical_code_review_comments": [
+    "useSplitScreenGuard.isShrunk(): correctly uses Math.max/Math.min of screen.width/height so works in both portrait and landscape; good.",
+    "typing() check ignores split while input/textarea/select/contentEditable is focused — this correctly suppresses false-positives on Android soft-keyboard shrink. Good.",
+    "reportViolation() dedupe window (2500ms) prevents double counting from near-simultaneous fullscreen-exit + split-detect; verified via rapid consecutive shrink events.",
+    "InstallAppBanner uses sessionStorage so banner reappears on new browser session — intentional and matches spec.",
+    "pwa.js initPwa() registers service worker on window.load — safe; emits to listeners on bip/appinstalled; `canPromptInstall()` sync + onInstallAvailable listener pattern makes InstallAppBanner react correctly when bip arrives after mount."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only)", "frontend": "100% of requested flows"},
+  "test_credentials": "siti@lms.id / Siswa@12345 now has 3 recorded violations on tryout to_3 (still ongoing, 2 remaining before auto-submit). andi@lms.id has a currently-active attempt on to_3 as well. Future testing agents should use budi@/andi@/siti@ carefully — only one attempt per student per tryout.",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "PWA + split-screen features fully pass. Remember webpack-dev-server does NOT hot-reload /public/index.html — restart frontend after any edit there. To re-test exam flows on tryout to_3, use the student whose status is still 'Belum Dikerjakan' (admin can reset or create a new tryout). Current status: siswa@/budi@ already submitted; siti@/andi@ have ongoing attempts with violations recorded."
+}
