@@ -18,8 +18,6 @@ import { toast } from "sonner";
 import useTabGuard from "@/hooks/useTabGuard";
 import { stopAlarm } from "@/lib/alarm";
 
-const MAX_VIOLATIONS = 5;
-
 function fmtTime(s) {
   const m = Math.floor(s / 60);
   const sec = s % 60;
@@ -131,7 +129,8 @@ export default function TryoutEngine() {
     return () => clearInterval(timer);
   }, [timeLeft, doSubmit]);
 
-  useTabGuard(!!attemptId && tryout?.kind !== "exercise", async () => {
+  const MAX_VIOLATIONS = tryout?.tab_warning_limit ?? 0;
+  useTabGuard(!!attemptId && MAX_VIOLATIONS > 0, async () => {
     if (submittedRef.current) return stopAlarm();
     try {
       const { data } = await api.post(`/student/attempts/${attemptId}/violation`, { answers: answersRef.current });
@@ -188,7 +187,7 @@ export default function TryoutEngine() {
         </div>
         <div className="flex items-center gap-3">
         <SaveIndicator state={saveState} />
-        {tryout.kind !== "exercise" && (
+        {MAX_VIOLATIONS > 0 && (
           <span className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold ${violations > 0 ? "bg-red-50 text-red-600" : "bg-[#EFF6F8] text-[#475569]"}`} title="Jumlah peringatan keluar/pindah tab" data-testid="exam-violation-counter">
             <ShieldAlert className="h-3.5 w-3.5" /> {violations}/{MAX_VIOLATIONS}
           </span>

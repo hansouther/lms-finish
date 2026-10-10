@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, FileText, Settings2, BarChart3, HelpCircle, Users, Activity, CalendarClock, Shuffle } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, Settings2, BarChart3, HelpCircle, Users, Activity, CalendarClock, Shuffle, ShieldAlert } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
 import api, { apiError } from "@/lib/api";
 import PageHeader from "@/components/common/PageHeader";
@@ -16,7 +16,7 @@ import IrtScaleFields, { EMPTY_CUSTOM, toCustomPayload, SCALE_PRESETS } from "@/
 import { formatRupiah, formatDateTime, toLocalInput, fromLocalInput } from "@/lib/format";
 import { toast } from "sonner";
 
-const EMPTY = { title: "", description: "", subject: "", duration_minutes: 60, published: false, irt_scale: "snbt", irt_scale_custom: EMPTY_CUSTOM, price: 0, start_at: "", end_at: "", shuffle_questions: false, shuffle_options: false };
+const EMPTY = { title: "", description: "", subject: "", duration_minutes: 60, published: false, irt_scale: "snbt", irt_scale_custom: EMPTY_CUSTOM, price: 0, start_at: "", end_at: "", shuffle_questions: false, shuffle_options: false, tab_warning_limit: 5 };
 const SCHED = { upcoming: ["Belum dibuka", "#C9A227", "#FBF3DC"], open: ["Dibuka", "#10B981", "#ECFDF5"], closed: ["Ditutup", "#EF4444", "#FEF2F2"] };
 const scaleLabel = (t) => (SCALE_PRESETS.find((p) => p.key === (t.irt_scale || "snbt")) || SCALE_PRESETS[0]).label;
 
@@ -29,11 +29,11 @@ export default function ManageTryouts() {
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e?.target ? e.target.value : e }));
 
   const openNew = () => { setForm(EMPTY); setEditId(null); setOpen(true); };
-  const openEdit = (t) => { setForm({ title: t.title, description: t.description || "", subject: t.subject, duration_minutes: t.duration_minutes, published: t.published, irt_scale: t.irt_scale || "snbt", irt_scale_custom: t.irt_scale_custom || EMPTY_CUSTOM, price: t.price || 0, start_at: toLocalInput(t.start_at), end_at: toLocalInput(t.end_at), shuffle_questions: !!t.shuffle_questions, shuffle_options: !!t.shuffle_options }); setEditId(t.id); setOpen(true); };
+  const openEdit = (t) => { setForm({ title: t.title, description: t.description || "", subject: t.subject, duration_minutes: t.duration_minutes, published: t.published, irt_scale: t.irt_scale || "snbt", irt_scale_custom: t.irt_scale_custom || EMPTY_CUSTOM, price: t.price || 0, start_at: toLocalInput(t.start_at), end_at: toLocalInput(t.end_at), shuffle_questions: !!t.shuffle_questions, shuffle_options: !!t.shuffle_options, tab_warning_limit: t.tab_warning_limit ?? 5 }); setEditId(t.id); setOpen(true); };
 
   const save = async () => {
     if (form.start_at && form.end_at && new Date(form.end_at) <= new Date(form.start_at)) return toast.error("Waktu tutup harus setelah waktu buka");
-    const payload = { ...form, start_at: fromLocalInput(form.start_at), end_at: fromLocalInput(form.end_at), duration_minutes: parseInt(form.duration_minutes || 60, 10), price: Math.max(0, parseInt(form.price || 0, 10) || 0), irt_scale_custom: form.irt_scale === "custom" ? toCustomPayload(form.irt_scale_custom) : null };
+    const payload = { ...form, start_at: fromLocalInput(form.start_at), end_at: fromLocalInput(form.end_at), duration_minutes: parseInt(form.duration_minutes || 60, 10), price: Math.max(0, parseInt(form.price || 0, 10) || 0), tab_warning_limit: Math.min(20, Math.max(0, parseInt(form.tab_warning_limit, 10) || 0)), irt_scale_custom: form.irt_scale === "custom" ? toCustomPayload(form.irt_scale_custom) : null };
     try {
       if (editId) {
         const { data: res } = await api.put(`/admin/tryouts/${editId}`, payload);
@@ -73,6 +73,7 @@ export default function ManageTryouts() {
                 {t.in_progress_count > 0 && <span className="ml-1 rounded-full bg-[#E6F5F8] px-2 py-0.5 text-[10px] font-semibold text-[#0E7490]">{t.in_progress_count} sedang mengerjakan</span>}
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5"><span className="inline-flex items-center rounded-full border border-[#0E7490]/30 bg-[#E6F5F8] px-2.5 py-0.5 text-[11px] font-semibold text-[#0E7490]" data-testid={`tryout-scale-${t.id}`}>Skala IRT: {scaleLabel(t)}</span>
+                <span className="inline-flex items-center gap-1 rounded-full border border-[#E2E8F0] px-2.5 py-0.5 text-[11px] font-semibold text-[#475569]" data-testid={`tryout-tab-limit-badge-${t.id}`}><ShieldAlert className="h-3 w-3" /> {(t.tab_warning_limit ?? 5) > 0 ? `Maks ${t.tab_warning_limit ?? 5}x pindah tab` : "Deteksi tab nonaktif"}</span>
                 {(t.shuffle_questions || t.shuffle_options) && <span className="inline-flex items-center gap-1 rounded-full border border-[#C9A227]/40 bg-[#FBF3DC] px-2.5 py-0.5 text-[11px] font-semibold text-[#8A6D12]" data-testid={`tryout-shuffle-${t.id}`}><Shuffle className="h-3 w-3" /> Acak {[t.shuffle_questions && "soal", t.shuffle_options && "pilihan"].filter(Boolean).join(" & ")}</span>}
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
@@ -121,6 +122,11 @@ export default function ManageTryouts() {
                 <div><p className="text-sm text-[#0A1128]">Acak urutan pilihan jawaban</p><p className="text-xs text-[#94A3B8]">Berlaku untuk Pilihan Ganda & Pilihan Ganda Kompleks.</p></div>
                 <Switch checked={form.shuffle_options} onCheckedChange={(v) => setForm((f) => ({ ...f, shuffle_options: v }))} data-testid="tryout-shuffle-options" />
               </div>
+            </div>
+            <div className="rounded-lg border border-[#E2E8F0] p-3" data-testid="tryout-tab-limit-field">
+              <Label className="flex items-center gap-1.5"><ShieldAlert className="h-4 w-4 text-[#0E7490]" /> Batas peringatan pindah tab</Label>
+              <Input type="number" min="0" max="20" value={form.tab_warning_limit} onChange={set("tab_warning_limit")} className="mt-1.5 w-32" data-testid="tryout-tab-limit" />
+              <p className="mt-1 text-xs text-[#94A3B8]">1–20 kali. Saat batas tercapai, Try Out otomatis dikumpulkan. Isi 0 untuk mematikan deteksi pindah tab.</p>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] p-3">
               <div><Label>Terbitkan untuk siswa</Label><p className="text-xs text-[#94A3B8]">Siswa hanya melihat Try Out yang terbit.</p></div>

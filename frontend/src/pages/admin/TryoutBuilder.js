@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, HelpCircle, CheckCircle2, X, Upload, FileDown, Tag, FileSpreadsheet, Gauge, ImagePlus, Sigma, Loader2, Library } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, HelpCircle, CheckCircle2, X, Upload, FileDown, Tag, FileSpreadsheet, Gauge, ImagePlus, Sigma, Loader2, Library, BookMarked } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
 import api, { apiError } from "@/lib/api";
 import { Loading, Empty } from "@/components/common/States";
@@ -45,7 +45,7 @@ const DIFF_LABEL = { mudah: "Mudah", sedang: "Sedang", sulit: "Sulit" };
 const DIFF_COLOR = { mudah: "#10B981", sedang: "#C9A227", sulit: "#EF4444" };
 const effDiff = (q) => (q.irt_calibrated && q.irt_b != null) ? (q.irt_b < -0.5 ? "mudah" : q.irt_b > 0.5 ? "sulit" : "sedang") : (q.difficulty_label || "sedang");
 const newOpts = () => [{ id: "o1", text: "" }, { id: "o2", text: "" }, { id: "o3", text: "" }, { id: "o4", text: "" }];
-const EMPTY = { type: "single", text: "", points: 20, options: newOpts(), correct: [], essay: "", competency: "umum", difficulty: "sedang", image_url: null, tf_labels: ["Benar", "Salah"], tfKey: {} };
+const EMPTY = { type: "single", text: "", points: 20, options: newOpts(), correct: [], essay: "", competency: "umum", difficulty: "sedang", image_url: null, tf_labels: ["Benar", "Salah"], tfKey: {}, bidang: "", materi: "" };
 
 export default function TryoutBuilder() {
   const { id } = useParams();
@@ -63,6 +63,16 @@ export default function TryoutBuilder() {
   const [blueprintVersion, setBlueprintVersion] = useState(0);
   const [calibrating, setCalibrating] = useState(false);
   const [bankOpen, setBankOpen] = useState(false);
+  const [bulkMateri, setBulkMateri] = useState("");
+  const materiList = [...new Set((questions || []).map((q) => q.materi).filter(Boolean))];
+  const applyBulkMateri = async () => {
+    if (!bulkMateri.trim()) return toast.error("Isi nama materi");
+    try {
+      const { data } = await api.post(`/admin/tryouts/${id}/questions/bulk-materi`, { question_ids: [...selected], materi: bulkMateri });
+      toast.success(`${data.updated} soal ditandai materi ${bulkMateri}`);
+      setSelected(new Set()); setBulkMateri(""); refetch();
+    } catch (e) { toast.error(apiError(e)); }
+  };
   const bumpBlueprint = () => setBlueprintVersion((v) => v + 1);
 
   const toggleSelect = (qid) => setSelected((s) => { const n = new Set(s); n.has(qid) ? n.delete(qid) : n.add(qid); return n; });
@@ -142,6 +152,7 @@ export default function TryoutBuilder() {
       image_url: q.image_url || null,
       tf_labels: tfLabels(q),
       tfKey: q.type === "truefalse_multi" ? parseTfMap(q.correct_answers) : {},
+      bidang: q.bidang || "", materi: q.materi || "",
     });
     setEditId(q.id); setOpen(true);
   };
@@ -171,7 +182,7 @@ export default function TryoutBuilder() {
       correct_answers = form.essay.split(",").map((s) => s.trim()).filter(Boolean);
       if (!correct_answers.length) return toast.error("Isi kunci jawaban esai");
     }
-    const payload = { type: form.type, text: form.text, options, correct_answers, points: parseInt(form.points || 1, 10), order: 0, competency: form.competency || "umum", difficulty_label: form.difficulty || "sedang", image_url: form.image_url || null, tf_labels: form.type.startsWith("truefalse") ? form.tf_labels.map((l, i) => l.trim() || ["Benar", "Salah"][i]) : null };
+    const payload = { type: form.type, text: form.text, options, correct_answers, points: parseInt(form.points || 1, 10), order: 0, competency: form.competency || "umum", difficulty_label: form.difficulty || "sedang", image_url: form.image_url || null, bidang: form.bidang, materi: form.materi, tf_labels: form.type.startsWith("truefalse") ? form.tf_labels.map((l, i) => l.trim() || ["Benar", "Salah"][i]) : null };
     try {
       if (editId) await api.put(`/admin/questions/${editId}`, payload);
       else await api.post(`/admin/tryouts/${id}/questions`, payload);
@@ -245,10 +256,13 @@ export default function TryoutBuilder() {
                   <SelectContent>{DIFFICULTIES.map((c) => <SelectItem key={c.v} value={c.v}>{c.l}</SelectItem>)}</SelectContent>
                 </Select>
                 <Button size="sm" onClick={applyBulkDiff} className="rounded-full bg-[#C9A227] hover:bg-[#b08f1f] text-[#0A1128]" data-testid="apply-bulk-difficulty"><Gauge className="h-4 w-4" /> Terapkan</Button>
+                <span className="text-xs text-[#94A3B8] ml-1">materi</span>
+                <Input value={bulkMateri} onChange={(e) => setBulkMateri(e.target.value)} list="materi-options" placeholder="mis. Pecahan" className="h-9 w-36" data-testid="bulk-materi-input" />
+                <Button size="sm" onClick={applyBulkMateri} className="rounded-full bg-[#0A1128] hover:bg-[#1e293b]" data-testid="apply-bulk-materi"><BookMarked className="h-4 w-4" /> Terapkan</Button>
                 <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())} className="rounded-full">Batal</Button>
               </div>
             ) : (
-              <span className="ml-auto text-xs text-[#94A3B8]">Pilih beberapa soal untuk menandai kompetensi (Numerasi/Literasi) & tingkat kesulitan IRT (Mudah/Sedang/Sulit) sekaligus.</span>
+              <span className="ml-auto text-xs text-[#94A3B8]">Pilih beberapa soal untuk menandai kompetensi, tingkat kesulitan IRT & materi sekaligus.</span>
             )}
           </div>
           {questions.map((q, i) => (
@@ -262,6 +276,8 @@ export default function TryoutBuilder() {
                     <span className="text-xs text-[#94A3B8]">{typeLabel(q.type)} · {q.points} poin</span>
                     <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: `${COMP_COLOR[q.competency || "umum"]}1A`, color: COMP_COLOR[q.competency || "umum"] }} data-testid={`question-competency-${q.id}`}>{COMP_LABEL[q.competency || "umum"]}</span>
                     <span className="rounded-full px-2 py-0.5 text-xs font-semibold inline-flex items-center gap-1" style={{ backgroundColor: `${DIFF_COLOR[effDiff(q)]}1A`, color: DIFF_COLOR[effDiff(q)] }} data-testid={`question-difficulty-${q.id}`}><Gauge className="h-3 w-3" />{DIFF_LABEL[effDiff(q)]}</span>
+                    {q.bidang && <span className="rounded-full border border-[#E2E8F0] px-2 py-0.5 text-xs font-medium text-[#475569]" data-testid={`question-bidang-${q.id}`}>{q.bidang}</span>}
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium inline-flex items-center gap-1 ${q.materi ? "bg-[#0A1128]/5 text-[#0A1128]" : "text-[#94A3B8] italic"}`} data-testid={`question-materi-${q.id}`}><BookMarked className="h-3 w-3" />{q.materi || "Materi belum diisi"}</span>
                     {q.irt_calibrated && q.irt_b != null && (
                       <span className="rounded-full bg-[#0A1128] text-white/90 px-2 py-0.5 text-[10px] font-mono" data-testid={`question-irt-${q.id}`} title="Parameter IRT 3PL (daya pembeda a, kesulitan b, tebakan c)">IRT a={Number(q.irt_a).toFixed(2)} b={Number(q.irt_b).toFixed(2)} c={Number(q.irt_c).toFixed(2)}</span>
                     )}
@@ -330,6 +346,11 @@ export default function TryoutBuilder() {
                 </Select>
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Bidang (Mata Pelajaran)</Label><Input value={form.bidang} onChange={(e) => setForm((f) => ({ ...f, bidang: e.target.value }))} placeholder="Kosongkan = mapel Try Out" className="mt-1.5" data-testid="question-bidang" /></div>
+              <div><Label>Materi / Topik</Label><Input value={form.materi} onChange={(e) => setForm((f) => ({ ...f, materi: e.target.value }))} list="materi-options" placeholder="mis. Pecahan, Aljabar" className="mt-1.5" data-testid="question-materi" /></div>
+            </div>
+            <datalist id="materi-options">{materiList.map((m) => <option key={m} value={m} />)}</datalist>
             <p className="-mt-2 text-xs text-[#94A3B8]">Kompetensi untuk laporan Numerasi vs Literasi. Tingkat kesulitan jadi acuan komposisi IRT (parameter a/b/c dikalibrasi otomatis dari jawaban peserta).</p>
             <div><Label>Pertanyaan</Label><Textarea value={form.text} onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))} className="mt-1.5 font-mono2 text-sm" rows={4} data-testid="question-text" placeholder="Contoh: Hasil dari $\frac{1}{2} + \frac{1}{3}$ adalah ..." />
               <p className="mt-1 text-xs text-[#94A3B8] flex items-start gap-1"><Sigma className="h-3.5 w-3.5 mt-0.5 shrink-0" /><span>Rumus: tulis di antara <code>$...$</code> (sebaris) atau <code>$$...$$</code> (baris sendiri). Contoh <code>{"$x^2$"}</code>, <code>{"$\\sqrt{2}$"}</code>, <code>{"$\\frac{a}{b}$"}</code>. Ketik <code>\$</code> untuk simbol dolar biasa. Berlaku juga di pilihan jawaban.</span></p>

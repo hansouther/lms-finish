@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, UploadFile, File
 from fastapi.responses import Response
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import List, Optional
 import io
 import csv
@@ -94,6 +94,7 @@ class TryoutBody(BaseModel):
     price: int = 0  # harga Try Out (Rupiah); 0 = gratis
     shuffle_questions: bool = False
     shuffle_options: bool = False
+    tab_warning_limit: int = Field(5, ge=0, le=20)  # 0 = deteksi pindah tab nonaktif
 
 
 class IrtScaleBody(BaseModel):
@@ -135,10 +136,29 @@ class QuestionBody(BaseModel):
     order: int = 0
     competency: str = "umum"  # numerasi | literasi | umum (AKM)
     difficulty_label: Optional[str] = None  # mudah | sedang | sulit (label manual untuk IRT)
+    bidang: Optional[str] = None  # mata pelajaran
+    materi: Optional[str] = None  # topik
 
 
 class CopyQuestionsBody(BaseModel):
     question_ids: List[str]
+
+
+class BulkMateriBody(BaseModel):
+    question_ids: List[str]
+    bidang: Optional[str] = None
+    materi: Optional[str] = None
+
+
+def _clean_text(v):
+    return (v or "").strip() or None
+
+
+async def backfill_question_bidang():
+    async for t in db.tryouts.find({}, {"_id": 0, "id": 1, "subject": 1}):
+        if t.get("subject"):
+            await db.questions.update_many({"tryout_id": t["id"], "$or": [{"bidang": None}, {"bidang": {"$exists": False}}, {"bidang": ""}]},
+                                           {"$set": {"bidang": t["subject"].strip()}})
 
 
 class BulkCompetencyBody(BaseModel):
@@ -500,10 +520,13 @@ async def list_questions(tryout_id: str, user: dict = Depends(admin_only)):
 
 @router.post("/tryouts/{tryout_id}/questions")
 async def create_question(tryout_id: str, body: QuestionBody, user: dict = Depends(admin_only)):
-    if not await db.tryouts.find_one({"id": tryout_id}):
+    tryout = await db.tryouts.find_one({"id": tryout_id}, {"_id": 0, "subject": 1})
+    if not tryout:
         raise HTTPException(status_code=404, detail="Try Out tidak ditemukan")
     count = await db.questions.count_documents({"tryout_id": tryout_id})
     payload = body.model_dump()
+    payload["bidang"] = _clean_text(payload.get("bidang")) or _clean_text(tryout.get("subject"))
+    payload["materi"] = _clean_text(payload.get("materi"))
     dl = (payload.get("difficulty_label") or "").lower()
     payload["difficulty_label"] = dl if dl in irt.DIFFICULTY_LABELS else None
     doc = {"id": new_id(), "tryout_id": tryout_id, **payload,
@@ -517,14 +540,48 @@ async def create_question(tryout_id: str, body: QuestionBody, user: dict = Depen
 
 
 @router.get("/question-bank")
-async def question_bank(exclude: Optional[str] = None, user: dict = Depends(admin_only)):
-    tryouts = await db.tryouts.find({"id": {"$ne": exclude}}, {"_id": 0, "id": 1, "title": 1, "subject": 1, "kind": 1}).sort("created_at", -1).to_list(500)
-    qs = await db.questions.find({"tryout_id": {"$in": [t["id"] for t in tryouts]}},
-                                 {"_id": 0, "id": 1, "tryout_id": 1, "type": 1, "text": 1, "points": 1, "competency": 1, "order": 1}).sort("order", 1).to_list(20000)
-    by_t = {}
-    for q in qs:
-        by_t.setdefault(q["tryout_id"], []).append(q)
-    return [{**t, "questions": by_t[t["id"]]} for t in tryouts if by_t.get(t["id"])]
+async def question_bank(exclude: Optional[str] = None, bidang: Optional[str] = None, materi: Optional[str] = None,
+                        competency: Optional[str] = None, difficulty: Optional[str] = None, q: Optional[str] = None,
+                        user: dict = Depends(admin_only)):
+    base = {"tryout_id": {"$ne": exclude}} if exclude else {}
+    facets_rows = await db.questions.find(base, {"_id": 0, "bidang": 1, "materi": 1}).to_list(50000)
+    materi_by_bidang = {}
+    for r in facets_rows:
+        b = r.get("bidang") or "Tanpa bidang"
+        materi_by_bidang.setdefault(b, set())
+        if r.get("materi"):
+            materi_by_bidang[b].add(r["materi"])
+    query = dict(base)
+    if bidang:
+        query["bidang"] = None if bidang == "Tanpa bidang" else bidang
+    if materi:
+        query["materi"] = materi
+    if competency:
+        query["competency"] = competency
+    if q:
+        query["text"] = {"$regex": re.escape(q.strip()), "$options": "i"}
+    proj = {"_id": 0, "id": 1, "tryout_id": 1, "type": 1, "text": 1, "points": 1, "competency": 1, "bidang": 1,
+            "materi": 1, "difficulty_label": 1, "irt_calibrated": 1, "irt_b": 1, "image_url": 1}
+    items = await db.questions.find(query, proj).sort([("bidang", 1), ("materi", 1)]).to_list(3000)
+    for it in items:
+        it["difficulty"] = irt.effective_label(it)
+    if difficulty:
+        items = [it for it in items if it["difficulty"] == difficulty]
+    titles = {t["id"]: t["title"] for t in await db.tryouts.find(
+        {"id": {"$in": list({it["tryout_id"] for it in items})}}, {"_id": 0, "id": 1, "title": 1}).to_list(5000)}
+    for it in items:
+        it["source_title"] = titles.get(it["tryout_id"])
+    return {"items": items, "facets": {"bidang": sorted(materi_by_bidang),
+                                       "materi": {k: sorted(v) for k, v in materi_by_bidang.items()}}}
+
+
+@router.post("/tryouts/{tryout_id}/questions/bulk-materi")
+async def bulk_materi(tryout_id: str, body: BulkMateriBody, user: dict = Depends(admin_only)):
+    upd = {k: _clean_text(getattr(body, k)) for k in ("bidang", "materi") if getattr(body, k) is not None}
+    if not upd or not body.question_ids:
+        raise HTTPException(status_code=400, detail="Isi bidang atau materi dan pilih soal")
+    res = await db.questions.update_many({"tryout_id": tryout_id, "id": {"$in": body.question_ids}}, {"$set": upd})
+    return {"updated": res.modified_count}
 
 
 @router.post("/tryouts/{tryout_id}/questions/copy")
@@ -548,6 +605,8 @@ async def update_question(question_id: str, body: QuestionBody, user: dict = Dep
     payload = body.model_dump()
     dl = (payload.get("difficulty_label") or "").lower()
     payload["difficulty_label"] = dl if dl in irt.DIFFICULTY_LABELS else None
+    payload["bidang"] = _clean_text(payload.get("bidang"))
+    payload["materi"] = _clean_text(payload.get("materi"))
     res = await db.questions.update_one({"id": question_id}, {"$set": payload})
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Soal tidak ditemukan")
@@ -1002,7 +1061,9 @@ def _row_to_question(row: dict, order: int):
     lf = str(row.get("label_salah") or "").strip()
     tf_labels = [lt or "Benar", lf or "Salah"] if t in ("truefalse", "truefalse_multi") and (lt or lf) else None
     return {"type": t, "text": text, "options": options, "correct_answers": correct, "tf_labels": tf_labels,
-            "points": points, "order": order, "competency": comp, "difficulty_label": dl}, None
+            "points": points, "order": order, "competency": comp, "difficulty_label": dl,
+            "bidang": _clean_text(str(row.get("bidang") or row.get("mapel") or "")),
+            "materi": _clean_text(str(row.get("materi") or row.get("topik") or ""))}, None
 
 
 def _parse_sheet(data: bytes, fname: str):
@@ -1045,7 +1106,8 @@ def _parse_zip(data: bytes):
 
 @router.post("/tryouts/{tryout_id}/questions/import")
 async def import_questions(tryout_id: str, file: UploadFile = File(...), user: dict = Depends(admin_only)):
-    if not await db.tryouts.find_one({"id": tryout_id}):
+    tryout = await db.tryouts.find_one({"id": tryout_id}, {"_id": 0, "subject": 1})
+    if not tryout:
         raise HTTPException(status_code=404, detail="Try Out tidak ditemukan")
     data = await file.read()
     fname = (file.filename or "").lower()
@@ -1080,6 +1142,7 @@ async def import_questions(tryout_id: str, file: UploadFile = File(...), user: d
                 errors.append(f"Baris {idx + 2}: gambar {img!r} tidak ditemukan (unggah sebagai ZIP berisi Excel + gambar), soal tetap diimpor tanpa gambar")
         q["id"] = new_id()
         q["tryout_id"] = tryout_id
+        q["bidang"] = q.get("bidang") or _clean_text(tryout.get("subject"))
         q.update({"irt_a": None, "irt_b": None, "irt_c": None, "irt_calibrated": False,
                   "p_value": None, "point_biserial": None, "response_count": 0})
         await db.questions.insert_one(q)

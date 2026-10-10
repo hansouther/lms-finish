@@ -1,34 +1,78 @@
 import { useEffect, useState } from "react";
-import { Library, Loader2 } from "lucide-react";
+import { Library, Loader2, BookMarked, Gauge } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-const strip = (t) => (t || "").replace(/\s+/g, " ").slice(0, 140);
+const ALL = "__all";
+const COMP = { numerasi: "Numerasi", literasi: "Literasi", umum: "Umum" };
+const DIFF = { mudah: ["Mudah", "#10B981"], sedang: ["Sedang", "#C9A227"], sulit: ["Sulit", "#EF4444"] };
+const EMPTY_F = { bidang: ALL, materi: ALL, competency: ALL, difficulty: ALL };
+const strip = (t) => (t || "").replace(/\s+/g, " ").slice(0, 160);
+
+function FilterSelect({ value, onChange, placeholder, options, testid }) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="h-9" data-testid={testid}><SelectValue placeholder={placeholder} /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value={ALL}>{placeholder}</SelectItem>
+        {options.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function BankRow({ x, checked, onToggle }) {
+  const [dl, dc] = DIFF[x.difficulty] || DIFF.sedang;
+  return (
+    <label className="flex items-start gap-2 px-3 py-2.5 border-t border-[#E2E8F0] first:border-t-0 cursor-pointer hover:bg-[#F8FAFC]" data-testid={`bank-row-${x.id}`}>
+      <Checkbox checked={checked} onCheckedChange={(v) => onToggle([x.id], !!v)} className="mt-0.5" data-testid={`bank-q-${x.id}`} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-[#0A1128]">{strip(x.text)}</p>
+        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]">
+          <span className="rounded-full border border-[#E2E8F0] px-2 py-0.5 text-[#475569]">{x.bidang || "Tanpa bidang"}</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#0A1128]/5 px-2 py-0.5 text-[#0A1128]"><BookMarked className="h-3 w-3" />{x.materi || "Tanpa materi"}</span>
+          <span className="rounded-full bg-[#E6F5F8] px-2 py-0.5 text-[#0E7490]">{COMP[x.competency] || "Umum"}</span>
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5" style={{ color: dc, backgroundColor: `${dc}1A` }}><Gauge className="h-3 w-3" />{dl}</span>
+        </div>
+      </div>
+    </label>
+  );
+}
 
 export default function QuestionBankDialog({ tryoutId, open, onOpenChange, onCopied }) {
-  const [bank, setBank] = useState(null);
-  const [picked, setPicked] = useState(new Set());
+  const [data, setData] = useState(null);
+  const [f, setF] = useState(EMPTY_F);
   const [q, setQ] = useState("");
+  const [picked, setPicked] = useState(new Set());
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => { if (open) { setPicked(new Set()); setF(EMPTY_F); setQ(""); } }, [open]);
   useEffect(() => {
     if (!open) return;
-    setPicked(new Set()); setBank(null);
-    api.get("/admin/question-bank", { params: { exclude: tryoutId } }).then(({ data }) => setBank(data)).catch((e) => toast.error(apiError(e)));
-  }, [open, tryoutId]);
+    const params = { exclude: tryoutId, q: q || undefined };
+    Object.entries(f).forEach(([k, v]) => { if (v !== ALL) params[k] = v; });
+    setData(null);
+    const h = setTimeout(() => api.get("/admin/question-bank", { params }).then(({ data: d }) => setData(d)).catch((e) => toast.error(apiError(e))), 250);
+    return () => clearTimeout(h);
+  }, [open, tryoutId, f, q]);
 
+  const setK = (k) => (v) => setF((p) => ({ ...p, [k]: v, ...(k === "bidang" ? { materi: ALL } : {}) }));
   const toggle = (ids, on) => setPicked((s) => { const n = new Set(s); ids.forEach((id) => (on ? n.add(id) : n.delete(id))); return n; });
-  const match = (x) => !q || x.text?.toLowerCase().includes(q.toLowerCase());
+  const facets = data?.facets || { bidang: [], materi: {} };
+  const materiOpts = f.bidang !== ALL ? facets.materi[f.bidang] || [] : [...new Set(Object.values(facets.materi).flat())].sort();
+  const items = data?.items || [];
+  const allChecked = items.length > 0 && items.every((x) => picked.has(x.id));
 
   const copy = async () => {
     setBusy(true);
     try {
-      const { data } = await api.post(`/admin/tryouts/${tryoutId}/questions/copy`, { question_ids: [...picked] });
-      toast.success(`${data.copied} soal berhasil disalin ke Try Out ini`);
+      const { data: r } = await api.post(`/admin/tryouts/${tryoutId}/questions/copy`, { question_ids: [...picked] });
+      toast.success(`${r.copied} soal berhasil disalin ke Try Out ini`);
       onOpenChange(false); onCopied();
     } catch (e) { toast.error(apiError(e)); }
     finally { setBusy(false); }
@@ -36,32 +80,23 @@ export default function QuestionBankDialog({ tryoutId, open, onOpenChange, onCop
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" aria-describedby={undefined} data-testid="question-bank-dialog">
-        <DialogHeader><DialogTitle className="flex items-center gap-2"><Library className="h-5 w-5 text-[#0E7490]" /> Ambil Soal dari Try Out Lain</DialogTitle></DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col" aria-describedby={undefined} data-testid="question-bank-dialog">
+        <DialogHeader><DialogTitle className="flex items-center gap-2"><Library className="h-5 w-5 text-[#0E7490]" /> Bank Soal — saring berdasarkan Bidang & Materi</DialogTitle></DialogHeader>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <FilterSelect value={f.bidang} onChange={setK("bidang")} placeholder="Semua bidang" options={facets.bidang.map((b) => [b, b])} testid="bank-filter-bidang" />
+          <FilterSelect value={f.materi} onChange={setK("materi")} placeholder="Semua materi" options={materiOpts.map((m) => [m, m])} testid="bank-filter-materi" />
+          <FilterSelect value={f.competency} onChange={setK("competency")} placeholder="Semua kompetensi" options={Object.entries(COMP)} testid="bank-filter-competency" />
+          <FilterSelect value={f.difficulty} onChange={setK("difficulty")} placeholder="Semua tingkat" options={Object.entries(DIFF).map(([k, v]) => [k, v[0]])} testid="bank-filter-difficulty" />
+        </div>
         <Input placeholder="Cari teks soal..." value={q} onChange={(e) => setQ(e.target.value)} data-testid="question-bank-search" />
-        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-          {!bank ? <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-[#0E7490]" /></div>
-            : !bank.length ? <p className="py-8 text-center text-sm text-[#94A3B8]">Belum ada soal di Try Out lain.</p>
-            : bank.map((t) => {
-              const qs = t.questions.filter(match);
-              if (!qs.length) return null;
-              const all = qs.every((x) => picked.has(x.id));
-              return (
-                <div key={t.id} className="rounded-xl border border-[#E2E8F0]" data-testid={`bank-tryout-${t.id}`}>
-                  <label className="flex items-center gap-2 bg-[#EFF6F8] px-3 py-2 rounded-t-xl cursor-pointer">
-                    <Checkbox checked={all} onCheckedChange={(v) => toggle(qs.map((x) => x.id), !!v)} data-testid={`bank-select-all-${t.id}`} />
-                    <span className="text-sm font-semibold text-[#0A1128]">{t.title}</span>
-                    <span className="text-xs text-[#94A3B8]">{t.subject} · {t.kind === "exercise" ? "Latihan" : "Try Out"} · {qs.length} soal</span>
-                  </label>
-                  {qs.map((x) => (
-                    <label key={x.id} className="flex items-start gap-2 px-3 py-2 border-t border-[#E2E8F0] cursor-pointer hover:bg-[#F8FAFC]">
-                      <Checkbox checked={picked.has(x.id)} onCheckedChange={(v) => toggle([x.id], !!v)} className="mt-0.5" data-testid={`bank-q-${x.id}`} />
-                      <span className="text-sm text-[#475569]">{strip(x.text)}</span>
-                    </label>
-                  ))}
-                </div>
-              );
-            })}
+        <div className="flex items-center justify-between text-xs text-[#475569]">
+          <label className="flex items-center gap-2 cursor-pointer"><Checkbox checked={allChecked} onCheckedChange={(v) => toggle(items.map((x) => x.id), !!v)} data-testid="bank-select-all" /> Pilih semua hasil</label>
+          <span data-testid="bank-result-count">{data ? `${items.length} soal ditemukan` : "Memuat..."}</span>
+        </div>
+        <div className="flex-1 min-h-[200px] overflow-y-auto rounded-xl border border-[#E2E8F0]">
+          {!data ? <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-[#0E7490]" /></div>
+            : !items.length ? <p className="py-10 text-center text-sm text-[#94A3B8]">Tidak ada soal yang cocok dengan filter.</p>
+            : items.map((x) => <BankRow key={x.id} x={x} checked={picked.has(x.id)} onToggle={toggle} />)}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>

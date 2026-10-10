@@ -72,6 +72,8 @@ async def startup():
     await seed(os.environ["ADMIN_EMAIL"], os.environ["ADMIN_PASSWORD"])
     await seed_content()
     await migrate_analysis()
+    from routes_admin import backfill_question_bidang
+    await backfill_question_bidang()
     await db.users.update_many({"status": {"$exists": False}}, {"$set": {"status": "approved"}})
     
     legacy = await db.teaching_slots.find({"sessions": {"$exists": False}, "date": {"$exists": True}}, {"_id": 0}).to_list(500)

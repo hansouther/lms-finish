@@ -342,6 +342,7 @@ async def tryout_detail(tryout_id: str, user: dict = Depends(student_only)):
                 if q.get("options") and q.get("type") in ("single", "multiple"):
                     rng.shuffle(q["options"])
     t["questions"] = [strip_answers(q) for q in questions]
+    t["tab_warning_limit"] = 0 if t.get("kind") == "exercise" else tab_limit(t)
     return t
 
 
@@ -451,7 +452,9 @@ async def submit_attempt(attempt_id: str, body: SubmitBody, background: Backgrou
     return await _finalize(attempt, body.answers, background)
 
 
-MAX_TAB_VIOLATIONS = 5
+def tab_limit(t: dict) -> int:
+    v = t.get("tab_warning_limit")
+    return 5 if v is None else int(v)
 
 
 @router.post("/attempts/{attempt_id}/violation")
@@ -461,9 +464,12 @@ async def tab_violation(attempt_id: str, body: SubmitBody, background: Backgroun
         raise HTTPException(status_code=404, detail="Percobaan tidak ditemukan")
     if attempt["status"] != "in_progress":
         raise HTTPException(status_code=409, detail="Percobaan sudah dikumpulkan")
-    t = await db.tryouts.find_one({"id": attempt["tryout_id"]}, {"_id": 0, "kind": 1})
-    if (t or {}).get("kind") == "exercise":
+    t = await db.tryouts.find_one({"id": attempt["tryout_id"]}, {"_id": 0, "kind": 1, "tab_warning_limit": 1}) or {}
+    if t.get("kind") == "exercise":
         raise HTTPException(status_code=400, detail="Peringatan pindah tab hanya berlaku untuk Try Out")
+    limit = tab_limit(t)
+    if limit <= 0:
+        raise HTTPException(status_code=400, detail="Deteksi pindah tab tidak aktif untuk Try Out ini")
     updated = await db.attempts.find_one_and_update(
         {"id": attempt_id}, {"$inc": {"tab_violations": 1}, "$set": {"last_violation_at": now_iso()}},
         projection={"_id": 0, "tab_violations": 1}, return_document=True)
@@ -471,8 +477,8 @@ async def tab_violation(attempt_id: str, body: SubmitBody, background: Backgroun
     await db.tryout_violations.update_one(
         {"tryout_id": attempt["tryout_id"], "student_id": user["id"]},
         {"$inc": {"total": 1}, "$set": {"last_at": now_iso()}}, upsert=True)
-    out = {"count": count, "max": MAX_TAB_VIOLATIONS, "auto_submitted": False}
-    if count >= MAX_TAB_VIOLATIONS:
+    out = {"count": count, "max": limit, "auto_submitted": False}
+    if count >= limit:
         res = await _finalize(attempt, body.answers, background, {"auto_submit_reason": "tab_violation"})
         out.update(auto_submitted=True, percentage=res["percentage"])
     return out
