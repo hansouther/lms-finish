@@ -12,3 +12,5 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - Audit repo kedua LMS-test1: versi lama (tanpa IRT/Midtrans), sisa jejak Emergent sama + bug subjek email + requirements berat (pandas/numpy/jq). Rekomendasi: deploy dari repo pertama yg sudah dibersihkan.
 - Gambar soal opsional (form manual + kolom `gambar` di template CSV/Excel + impor ZIP berisi Excel+gambar), endpoint publik /api/question-images/{name}
 - Rumus matematika KaTeX ($...$, $$...$$, \(..\), \[..\]) di builder (pratinjau), CBT siswa, pembahasan
+## Iteration 3 (Jun 2026)
+- Tipe soal baru `truefalse_multi` (Benar/Salah Majemuk): 1 stimulus + banyak pernyataan, kunci per pernyataan ("o1:true"), nilai proporsional, label kustom `tf_labels` (juga untuk truefalse biasa), template CSV/XLSX kolom label_benar/label_salah

@@ -1,0 +1,29 @@
+{
+  "summary": "Verified NEW 'Benar/Salah Majemuk' (truefalse_multi) question type end-to-end + custom tf_labels for both truefalse and truefalse_multi. Backend: 9/9 pytest PASS (test_iter21_tf_multi.py) covering templates (CSV & XLSX contain truefalse_multi + label_benar/label_salah columns and sample row), admin CRUD (POST creates with tf_labels+correct_answers like o1:true/o2:false/o3:true; GET list returns them; PUT updates tf_labels on truefalse), student view strips correct_answers but keeps tf_labels, FULL attempt lifecycle with PARTIAL SCORING confirmed (15 pts * 2/3 correct = 10 earned), CSV import creates truefalse_multi with proper correct_answers + tf_labels. Frontend Playwright E2E PASS: TryoutBuilder admin flow - add-question-btn opens dialog, selecting 'Benar / Salah Majemuk' shows tf-multi-editor; tf-label-true/tf-label-false (set to 'Sesuai'/'Tidak Sesuai') propagate to toggle labels and preview (question-preview contains tf-multi-answer with 'Sesuai'/'Tidak Sesuai' headers); tf-stmt-add works (3 statements); saving WITHOUT keys shows toast 'Tentukan kunci untuk setiap pernyataan'; saving with keys closes dialog and persists; list shows question-stmt-{qid}-{sid} rows with custom-label badges (Sesuai green, Tidak Sesuai red); editing reloads statements, keys, and custom labels correctly; cleanup via delete-question works. Student engine side partially verified: direct backend test confirmed partial-score=10/15 for 2-of-3 correct via actual submit/attempt API.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter21_tf_multi.py",
+    "/app/test_reports/pytest/iter21.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "backend/grading.py truefalse_multi partial score uses round() which gives banker's rounding in Python; 15*2/3=10 (clean), but e.g. 5*1/3=1.666..->2 while a user might expect 1. Fine for now; document behavior.",
+    "backend/routes_admin.py QuestionBody has tf_labels Optional[List[str]] with no length validation; a payload like tf_labels=['Only one'] or more than 2 entries is accepted silently. Low risk since UI always sends 2, but adding len==2 validation would harden the API.",
+    "frontend TryoutBuilder EMPTY uses tfKey={} and the save-path checks options.some((o)=>!form.tfKey[o.id]) which catches missing keys correctly, but if labels are set to all-whitespace strings the save coerces to defaults ['Benar','Salah'] which is correct — minor UX nicety could be to trim-on-blur.",
+    "frontend TfMultiEditor remove button only shown when statements.length>2; good safeguard. Add uses highest-numeric-id + 1 which is correct even after removes.",
+    "Student student/exam URL (/student/exam/:id) attempt re-entry: existing in-progress attempts show the question list that was snapshotted at start time; after an admin adds a new question mid-exam, existing attempts don't show it. This is correct behavior but worth noting to main agent for exam design docs."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter21_tf_multi.py"],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "100% admin builder E2E; student engine partially verified via backend attempt test"},
+  "test_credentials": "admin@lms.id / Admin@12345 (from backend/.env); student: test_iter21_stud@example.com / StudentPass123! (approved via admin in fixture)",
+  "seed_data_creation": "Created and then deleted all test questions in tryout to_3. Verified only the 5 seed questions (order 1-5) remain. Created test student user test_iter21_stud@example.com (approved) - left intact for future iterations.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Student engine URL is /student/exam/:id (NOT /student/tryouts/:id/engine). Login uses httpOnly cookies via requests.Session() (no bearer token in body). Admin credential via backend/.env ADMIN_PASSWORD=Admin@12345. Tryout to_3 has 5 seed questions after cleanup. Partial scoring formula: round(points * hits / total_statements). truefalse_multi correct_answers persist as array of 'oN:true/false'. tf_labels only serialized when type startswith 'truefalse'; defaults to ['Benar','Salah'] via lib/tf.js tfLabels(q).",
+  "rca of the issue": "N/A — no bugs found"
+}
