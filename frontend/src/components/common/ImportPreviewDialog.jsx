@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, AlertTriangle, XCircle, Pencil, Trash2, Loader2, RefreshCw, Upload } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle, Pencil, Trash2, Loader2, RefreshCw, Upload, CopyX } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ function RowEditor({ row, onCancel, onSave }) {
 }
 
 function StatusCell({ x }) {
+  if (x.duplicate) return <span className="flex items-start gap-1 text-xs text-[#7C3AED]"><CopyX className="h-3.5 w-3.5 mt-0.5 shrink-0" />{x.duplicate}</span>;
   if (!x.ok) return <span className="flex items-start gap-1 text-xs text-red-600"><XCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />{x.error}</span>;
   if (x.warnings?.length) return <span className="flex items-start gap-1 text-xs text-[#C9A227]"><AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />{x.warnings.join("; ")}</span>;
   return <span className="flex items-center gap-1 text-xs text-[#10B981]"><CheckCircle2 className="h-3.5 w-3.5" /> Siap diimpor</span>;
@@ -50,7 +51,7 @@ export default function ImportPreviewDialog({ tryoutId, preview, onClose, onImpo
 
   const revalidate = async (rows) => {
     setBusy(true);
-    try { const { data: d } = await api.post("/admin/questions/import/validate", { rows }); setData(d); }
+    try { const { data: d } = await api.post("/admin/questions/import/validate", { rows }, { params: { tryout_id: tryoutId } }); setData(d); }
     catch (e) { toast.error(apiError(e)); }
     finally { setBusy(false); }
   };
@@ -65,6 +66,7 @@ export default function ImportPreviewDialog({ tryoutId, preview, onClose, onImpo
       const rows = data.rows.filter((x) => x.ok).map((x) => x.raw);
       const { data: res } = await api.post(`/admin/tryouts/${tryoutId}/questions/import-rows`, { rows });
       toast.success(`${res.imported} soal berhasil diimpor`);
+      if (res.duplicates?.length) toast.info(`${res.duplicates.length} soal sama sudah ada, tidak dimasukkan. ${res.duplicates[0]}`);
       close(); onImported();
     } catch (e) { toast.error(apiError(e)); }
     finally { setBusy(false); }
@@ -80,6 +82,7 @@ export default function ImportPreviewDialog({ tryoutId, preview, onClose, onImpo
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span className="rounded-full bg-[#ECFDF5] px-3 py-1 font-semibold text-[#10B981]" data-testid="import-valid-count">{data.valid} siap</span>
             <span className={`rounded-full px-3 py-1 font-semibold ${data.invalid ? "bg-red-50 text-red-600" : "bg-[#EFF6F8] text-[#94A3B8]"}`} data-testid="import-invalid-count">{data.invalid} bermasalah</span>
+            {data.duplicates > 0 && <span className="rounded-full bg-[#F3E8FF] px-3 py-1 font-semibold text-[#7C3AED]" data-testid="import-duplicate-count">{data.duplicates} duplikat (dilewati)</span>}
             {busy && <Loader2 className="h-4 w-4 animate-spin text-[#0E7490]" />}
             <Button size="sm" variant="ghost" onClick={() => revalidate(rawRows())} className="ml-auto rounded-full" data-testid="import-revalidate"><RefreshCw className="h-4 w-4" /> Periksa ulang</Button>
           </div>
@@ -90,7 +93,7 @@ export default function ImportPreviewDialog({ tryoutId, preview, onClose, onImpo
               </TableRow></TableHeader>
               <TableBody>
                 {data.rows.map((x, i) => (
-                  <TableRow key={i} className={x.ok ? "" : "bg-red-50/40"} data-testid={`import-row-${i}`}>
+                  <TableRow key={i} className={x.duplicate ? "bg-[#F3E8FF]/40" : x.ok ? "" : "bg-red-50/40"} data-testid={`import-row-${i}`}>
                     <TableCell className="font-mono2 text-xs">{i + 2}</TableCell>
                     <TableCell><p className="text-xs text-[#94A3B8]">{x.raw.type} · {x.raw.points || 1} poin · kunci {x.raw.correct || "-"}</p><p className="text-sm text-[#0A1128] line-clamp-2">{x.raw.text || <i className="text-red-500">(kosong)</i>}</p></TableCell>
                     <TableCell className="text-xs text-[#475569]">{x.raw.bidang || "—"} / {x.raw.materi || "—"}{x.raw.pembahasan ? <span className="block text-[#8A6D12]">+ pembahasan</span> : null}</TableCell>
@@ -107,7 +110,7 @@ export default function ImportPreviewDialog({ tryoutId, preview, onClose, onImpo
           <DialogFooter>
             <Button variant="outline" onClick={close}>Batal</Button>
             <Button onClick={doImport} disabled={!data.valid || busy} className="bg-[#0E7490] hover:bg-[#0B5C74]" data-testid="import-confirm">
-              <Upload className="h-4 w-4" /> Impor {data.valid} soal{data.invalid ? ` (lewati ${data.invalid} baris)` : ""}
+              <Upload className="h-4 w-4" /> Impor {data.valid} soal{data.invalid + (data.duplicates || 0) ? ` (lewati ${data.invalid + (data.duplicates || 0)} baris)` : ""}
             </Button>
           </DialogFooter>
         </>))}

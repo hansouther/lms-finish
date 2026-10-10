@@ -1089,9 +1089,11 @@ def _row_to_question(row: dict, order: int):
     if not text:
         return None, "Kolom 'text' kosong"
     try:
-        points = int(float(row.get("points") or 1))
+        points = int(float(str(row.get("points") or "").strip()))
     except Exception:
-        points = 1
+        return None, "Kolom 'points' wajib diisi angka"
+    if points <= 0:
+        return None, "Kolom 'points' harus lebih dari 0"
     options, correct = [], []
     for i, l in enumerate(_LETTERS):
         v = row.get(f"option_{l}")
@@ -1137,13 +1139,15 @@ def _row_to_question(row: dict, order: int):
         options = []
         if not correct:
             return None, "Kunci esai kosong"
-    comp = str(row.get("competency") or row.get("kompetensi") or "umum").strip().lower()
-    if comp not in ("numerasi", "literasi"):
-        comp = "umum"
+    comp = str(row.get("competency") or row.get("kompetensi") or "").strip().lower()
+    if comp not in ("numerasi", "literasi", "umum"):
+        return None, "Kolom 'competency' wajib diisi: numerasi, literasi, atau umum"
     dl = str(row.get("difficulty_label") or row.get("tingkat") or row.get("kesulitan") or "").strip().lower()
     _MAP = {"mudah": "mudah", "easy": "mudah", "sedang": "sedang", "medium": "sedang",
             "sulit": "sulit", "susah": "sulit", "hard": "sulit"}
     dl = _MAP.get(dl)
+    if not dl:
+        return None, "Kolom 'tingkat' wajib diisi: mudah, sedang, atau sulit"
     lt = str(row.get("label_benar") or "").strip()
     lf = str(row.get("label_salah") or "").strip()
     tf_labels = [lt or "Benar", lf or "Salah"] if t in ("truefalse", "truefalse_multi") and (lt or lf) else None
@@ -1190,6 +1194,30 @@ def _parse_zip(data: bytes):
     if sheet is None:
         raise ValueError("ZIP harus berisi 1 file Excel (.xlsx) atau CSV")
     return _parse_sheet(sheet, sheet_name), images
+
+
+REQUIRED_COLUMNS = ["type", "text", "option_a", "option_b", "option_c", "option_d", "option_e",
+                    "correct", "points", "competency", "tingkat"]
+
+
+def _dup_key(text, options=None) -> str:
+    norm = lambda v: re.sub(r"\s+", " ", str(v or "")).strip().lower()
+    opts = sorted(norm(o.get("text") if isinstance(o, dict) else o) for o in (options or []))
+    return norm(text) + "||" + "|".join(o for o in opts if o)
+
+
+async def _existing_keys(tryout_id):
+    if not tryout_id:
+        return set()
+    qs = await db.questions.find({"tryout_id": tryout_id}, {"_id": 0, "text": 1, "options": 1}).to_list(5000)
+    return {_dup_key(q.get("text"), q.get("options")) for q in qs}
+
+
+def _missing_columns(rows):
+    have = set()
+    for r in rows:
+        have |= set(r.keys())
+    return [c for c in REQUIRED_COLUMNS if c not in have]
 
 
 _IMG_FIELDS = (("gambar", ("gambar", "image", "image_url"), "gambar soal"),
@@ -1249,14 +1277,23 @@ def _validate_row(row: dict, order: int = 0):
     return q, err, warns
 
 
-def _preview_payload(rows, extra_warns=None):
-    out = []
+def _preview_payload(rows, existing, extra_warns=None):
+    out, seen = [], {}
     for i, r in enumerate(rows):
         q, err, warns = _validate_row(r)
-        out.append({"raw": r, "ok": err is None, "error": err,
-                    "warnings": (extra_warns or {}).get(i, []) + warns,
-                    "question": q})
-    return {"rows": out, "valid": sum(1 for x in out if x["ok"]), "invalid": sum(1 for x in out if not x["ok"])}
+        dup = None
+        if q:
+            k = _dup_key(q["text"], q["options"])
+            if k in existing:
+                dup = "Soal yang sama sudah ada di Try Out ini, akan dilewati"
+            elif k in seen:
+                dup = f"Sama dengan baris {seen[k] + 2} di berkas ini, akan dilewati"
+            else:
+                seen[k] = i
+        out.append({"raw": r, "ok": err is None and dup is None, "error": err, "duplicate": dup,
+                    "warnings": (extra_warns or {}).get(i, []) + warns, "question": q})
+    return {"rows": out, "valid": sum(1 for x in out if x["ok"]),
+            "invalid": sum(1 for x in out if x["error"]), "duplicates": sum(1 for x in out if x["duplicate"])}
 
 
 async def _read_upload(file: UploadFile, user_id: str):
@@ -1271,6 +1308,9 @@ async def _read_upload(file: UploadFile, user_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Gagal membaca berkas: {e}")
     rows = _normalize_rows(rows)
+    missing = _missing_columns(rows)
+    if rows and missing:
+        raise HTTPException(status_code=400, detail=f"Kolom wajib tidak ada di berkas: {', '.join(missing)}. Gunakan template terbaru.")
     warns = await _upload_row_images(rows, images, user_id)
     return rows, warns
 
@@ -1280,12 +1320,18 @@ async def _insert_rows(tryout_id: str, rows):
     if not tryout:
         raise HTTPException(status_code=404, detail="Try Out tidak ditemukan")
     start = await db.questions.count_documents({"tryout_id": tryout_id})
-    imported, errors = 0, []
+    existing = await _existing_keys(tryout_id)
+    imported, errors, duplicates = 0, [], []
     for idx, row in enumerate(rows):
         q, err, warns = _validate_row(row, start + imported + 1)
         if err:
             errors.append(f"Baris {idx + 2}: {err}")
             continue
+        k = _dup_key(q["text"], q["options"])
+        if k in existing:
+            duplicates.append(f"Baris {idx + 2}: \"{q['text'][:60]}\" sudah ada")
+            continue
+        existing.add(k)
         errors += [f"Baris {idx + 2}: {w}" for w in warns]
         q.update({"id": new_id(), "tryout_id": tryout_id,
                   "bidang": q.get("bidang") or _clean_text(tryout.get("subject")),
@@ -1293,7 +1339,7 @@ async def _insert_rows(tryout_id: str, rows):
                   "p_value": None, "point_biserial": None, "response_count": 0})
         await db.questions.insert_one(q)
         imported += 1
-    return {"imported": imported, "errors": errors}
+    return {"imported": imported, "errors": errors, "duplicates": duplicates}
 
 
 class RowsBody(BaseModel):
@@ -1309,16 +1355,54 @@ async def import_questions(tryout_id: str, file: UploadFile = File(...), user: d
 
 
 @router.post("/questions/import/preview")
-async def import_preview(file: UploadFile = File(...), user: dict = Depends(admin_only)):
+async def import_preview(file: UploadFile = File(...), tryout_id: Optional[str] = None, user: dict = Depends(admin_only)):
     rows, warns = await _read_upload(file, user["id"])
     if not rows:
         raise HTTPException(status_code=400, detail="Berkas tidak berisi baris soal")
-    return _preview_payload(rows, warns)
+    return _preview_payload(rows, await _existing_keys(tryout_id), warns)
 
 
 @router.post("/questions/import/validate")
-async def import_validate(body: RowsBody, user: dict = Depends(admin_only)):
-    return _preview_payload(_normalize_rows(body.rows))
+async def import_validate(body: RowsBody, tryout_id: Optional[str] = None, user: dict = Depends(admin_only)):
+    return _preview_payload(_normalize_rows(body.rows), await _existing_keys(tryout_id))
+
+
+class IdsBody(BaseModel):
+    question_ids: List[str]
+
+
+@router.get("/question-bank/duplicates")
+async def question_duplicates(user: dict = Depends(admin_only)):
+    qs = await db.questions.find({}, {"_id": 0, "id": 1, "tryout_id": 1, "type": 1, "text": 1, "options": 1, "order": 1,
+                                       "bidang": 1, "materi": 1, "explanation": 1}).to_list(50000)
+    groups = {}
+    for q in qs:
+        groups.setdefault(_dup_key(q.get("text"), q.get("options")), []).append(q)
+    groups = [g for g in groups.values() if len(g) > 1]
+    tids = list({q["tryout_id"] for g in groups for q in g})
+    tmap = {t["id"]: t for t in await db.tryouts.find({"id": {"$in": tids}}, {"_id": 0, "id": 1, "title": 1, "kind": 1}).to_list(5000)}
+    used = {r["_id"] for r in await db.attempts.aggregate([
+        {"$match": {"tryout_id": {"$in": tids}, "status": "submitted"}}, {"$group": {"_id": "$tryout_id"}}]).to_list(5000)}
+    out = []
+    for g in groups:
+        items = [{"id": q["id"], "tryout_id": q["tryout_id"], "tryout_title": (tmap.get(q["tryout_id"]) or {}).get("title", "-"),
+                  "type": q.get("type"), "order": q.get("order"), "bidang": q.get("bidang"), "materi": q.get("materi"),
+                  "has_explanation": bool(q.get("explanation")), "tryout_has_results": q["tryout_id"] in used} for q in g]
+        per_t = {}
+        for it in items:
+            per_t.setdefault(it["tryout_id"], []).append(it)
+        out.append({"text": g[0].get("text", ""), "count": len(g), "items": items,
+                    "same_tryout": any(len(v) > 1 for v in per_t.values())})
+    out.sort(key=lambda x: (not x["same_tryout"], -x["count"]))
+    return {"groups": out, "total_groups": len(out), "same_tryout_groups": sum(1 for x in out if x["same_tryout"])}
+
+
+@router.post("/questions/bulk-delete")
+async def bulk_delete_questions(body: IdsBody, user: dict = Depends(admin_only)):
+    if not body.question_ids:
+        raise HTTPException(status_code=400, detail="Pilih soal yang akan dihapus")
+    res = await db.questions.delete_many({"id": {"$in": body.question_ids}})
+    return {"deleted": res.deleted_count}
 
 
 @router.post("/tryouts/{tryout_id}/questions/import-rows")
@@ -1380,6 +1464,11 @@ async def questions_template_xlsx(user: dict = Depends(admin_only)):
     ws.append(_TPL_HEADERS)
     for row in _TPL_SAMPLES:
         ws.append([row.get(h, "") for h in _TPL_HEADERS])
+    from openpyxl.styles import PatternFill, Font
+    for cell in ws[1]:
+        req = cell.value in REQUIRED_COLUMNS
+        cell.fill = PatternFill("solid", fgColor="0E7490" if req else "E2E8F0")
+        cell.font = Font(bold=True, color="FFFFFF" if req else "475569")
     for col in ws.columns:
         width = max((len(str(c.value)) if c.value is not None else 0) for c in col) + 2
         ws.column_dimensions[col[0].column_letter].width = min(max(width, 10), 48)
@@ -1387,6 +1476,10 @@ async def questions_template_xlsx(user: dict = Depends(admin_only)):
     info = wb.create_sheet("Petunjuk")
     guide = [
         ["Petunjuk Pengisian Template Soal (Impor Massal)"],
+        [""],
+        ["WAJIB", "Kolom header biru wajib ada: " + ", ".join(REQUIRED_COLUMNS) + ". Isi per baris: type, text, correct, points, competency, tingkat (opsi sesuai tipe soal)."],
+        ["OPSIONAL", "Kolom header abu-abu (bidang, materi, pembahasan, gambar, gambar_pembahasan, label_benar, label_salah) boleh dikosongkan & diatur nanti di halaman admin."],
+        ["Duplikat", "Soal yang sama (teks + pilihan) dengan soal yang sudah ada di Try Out tujuan, atau berulang di berkas, otomatis dilewati dan diberi pemberitahuan."],
         [""],
         ["Kolom", "Keterangan"],
         ["type", "Tipe soal: single (PG), multiple (PG kompleks), truefalse (1 pernyataan), truefalse_multi (Benar/Salah majemuk: 1 teks + beberapa pernyataan), essay"],

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, FileText, Settings2, BarChart3, HelpCircle, Users, Activity, CalendarClock, Shuffle, ShieldAlert, BookOpenCheck, BookLock } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, Settings2, BarChart3, HelpCircle, Users, Activity, CalendarClock, Shuffle, ShieldAlert, BookOpenCheck, BookLock, CopyX } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
 import api, { apiError } from "@/lib/api";
 import PageHeader from "@/components/common/PageHeader";
@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import IrtScaleFields, { EMPTY_CUSTOM, toCustomPayload, SCALE_PRESETS } from "@/components/common/IrtScaleFields";
 import { formatRupiah, formatDateTime, toLocalInput, fromLocalInput } from "@/lib/format";
 import { toast } from "sonner";
+import DuplicateDialog from "@/components/common/DuplicateDialog";
 
 const EMPTY = { title: "", description: "", subject: "", duration_minutes: 60, published: false, irt_scale: "snbt", irt_scale_custom: EMPTY_CUSTOM, price: 0, start_at: "", end_at: "", shuffle_questions: false, shuffle_options: false, tab_warning_limit: 5, show_review: false };
 const SCHED = { upcoming: ["Belum dibuka", "#C9A227", "#FBF3DC"], open: ["Dibuka", "#10B981", "#ECFDF5"], closed: ["Ditutup", "#EF4444", "#FEF2F2"] };
@@ -26,6 +27,7 @@ export default function ManageTryouts() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
+  const [dupOpen, setDupOpen] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e?.target ? e.target.value : e }));
 
   const openNew = () => { setForm(EMPTY); setEditId(null); setOpen(true); };
@@ -54,7 +56,11 @@ export default function ManageTryouts() {
   return (
     <div data-testid="manage-tryouts">
       <PageHeader title="Bank Soal & Try Out" subtitle="Buat paket Try Out, kelola soal & kunci jawaban, atur waktu, dan lihat hasil."
-        actions={<Button onClick={openNew} className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" data-testid="add-tryout-btn"><Plus className="h-4 w-4" /> Buat Try Out</Button>} />
+        actions={<div className="flex gap-2">
+          <Button variant="outline" onClick={() => setDupOpen(true)} className="rounded-full hover:bg-[#F3E8FF] hover:text-[#7C3AED]" data-testid="open-duplicates"><CopyX className="h-4 w-4" /> Cek Duplikat Soal</Button>
+          <Button onClick={openNew} className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" data-testid="add-tryout-btn"><Plus className="h-4 w-4" /> Buat Try Out</Button>
+        </div>} />
+      <DuplicateDialog open={dupOpen} onOpenChange={setDupOpen} onChanged={refetch} />
 
       {loading ? <Loading /> : !data?.length ? (
         <Empty icon={FileText} title="Belum ada Try Out" action={<Button onClick={openNew} className="rounded-full bg-[#0E7490]"><Plus className="h-4 w-4" /> Buat</Button>} />

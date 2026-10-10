@@ -138,7 +138,7 @@ export default function TryoutBuilder() {
     e.target.value = "";
     setPreviewing(true);
     try {
-      const { data } = await api.post("/admin/questions/import/preview", fd);
+      const { data } = await api.post("/admin/questions/import/preview", fd, { params: { tryout_id: id } });
       setPreview(data);
     } catch (err) { toast.error(apiError(err)); }
     finally { setPreviewing(false); }
