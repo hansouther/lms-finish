@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="10" time="4.228" timestamp="2026-10-10T08:01:54.382395+00:00" hostname="agent-env-2c9943a0-a1c5-48c5-9c5e-22f7392c3028"><testcase classname="tests.test_iter25_review_irt" name="test_question_explanation_persists" time="0.614" /><testcase classname="tests.test_iter25_review_irt" name="test_toggle_review_endpoint" time="0.242" /><testcase classname="tests.test_iter25_review_irt" name="test_percentages_from_submit" time="2.188" /><testcase classname="tests.test_iter25_review_irt" name="test_results_endpoint_monotonic" time="0.027"><failure message="AssertionError: IRT not monotonic: [(0.0, 0), (33.33, 446), (50.0, 494), (50.0, 458), (100.0, 1000)]&#10;assert 458 &gt;= 494">backend/tests/test_iter25_review_irt.py:224: in test_results_endpoint_monotonic
+    _check_monotonic(data)
+backend/tests/test_iter25_review_irt.py:211: in _check_monotonic
+    assert irts[i] &gt;= irts[i-1], (
+E   AssertionError: IRT not monotonic: [(0.0, 0), (33.33, 446), (50.0, 494), (50.0, 458), (100.0, 1000)]
+E   assert 458 &gt;= 494</failure></testcase><testcase classname="tests.test_iter25_review_irt" name="test_review_closed_gating" time="0.029" /><testcase classname="tests.test_iter25_review_irt" name="test_review_open_shows_items_and_explanation" time="0.073" /><testcase classname="tests.test_iter25_review_irt" name="test_calibrate_preserves_monotonic" time="0.056"><failure message="AssertionError: IRT not monotonic: [(0.0, 0), (33.33, 485), (50.0, 528), (50.0, 490), (100.0, 1000)]&#10;assert 490 &gt;= 528">backend/tests/test_iter25_review_irt.py:267: in test_calibrate_preserves_monotonic
+    _check_monotonic(r2.json())
+backend/tests/test_iter25_review_irt.py:211: in _check_monotonic
+    assert irts[i] &gt;= irts[i-1], (
+E   AssertionError: IRT not monotonic: [(0.0, 0), (33.33, 485), (50.0, 528), (50.0, 490), (100.0, 1000)]
+E   assert 490 &gt;= 528</failure></testcase><testcase classname="tests.test_iter25_review_irt" name="test_reset_preserves_monotonic" time="0.050"><failure message="AssertionError: IRT not monotonic: [(0.0, 0), (50.0, 528), (50.0, 464), (100.0, 1000)]&#10;assert 464 &gt;= 528">backend/tests/test_iter25_review_irt.py:278: in test_reset_preserves_monotonic
+    _check_monotonic(r2.json())
+backend/tests/test_iter25_review_irt.py:211: in _check_monotonic
+    assert irts[i] &gt;= irts[i-1], (
+E   AssertionError: IRT not monotonic: [(0.0, 0), (50.0, 528), (50.0, 464), (100.0, 1000)]
+E   assert 464 &gt;= 528</failure></testcase><testcase classname="tests.test_iter25_review_irt" name="test_force_submit_preserves_monotonic" time="0.080"><failure message="AssertionError: IRT not monotonic: [(0.0, 0), (0.0, 0), (50.0, 528), (50.0, 464), (100.0, 1000)]&#10;assert 464 &gt;= 528">backend/tests/test_iter25_review_irt.py:295: in test_force_submit_preserves_monotonic
+    _check_monotonic(rows)
+backend/tests/test_iter25_review_irt.py:211: in _check_monotonic
+    assert irts[i] &gt;= irts[i-1], (
+E   AssertionError: IRT not monotonic: [(0.0, 0), (0.0, 0), (50.0, 528), (50.0, 464), (100.0, 1000)]
+E   assert 464 &gt;= 528</failure></testcase><testcase classname="tests.test_iter25_review_irt" name="test_exercise_review_always_open" time="0.197" /></testsuite></testsuites>

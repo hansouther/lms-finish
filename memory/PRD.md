@@ -29,3 +29,8 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - `tab_warning_limit` per Try Out (0-20, default 5, 0 = deteksi nonaktif)
 ## Backlog
 - Kolom bidang/materi di template CSV/Excel
+## Iteration 7 (Jun 2026)
+- Pembahasan per soal (`explanation` + `explanation_image_url`, rumus KaTeX), kolom impor `pembahasan`
+- Saklar `show_review` per Try Out (form + tombol cepat "Buka Pembahasan", PUT /admin/tryouts/{id}/review); tertutup = siswa hanya lihat nilai 0–100 & IRT (per_question/answers tidak dikirim). Latihan (exercise) selalu terbuka
+- Nilai 0–100 = poin/maks*100, 2 desimal format id-ID (formatNilai)
+- Penyelarasan IRT (irt.align_scores, PAVA): nilai asli lebih tinggi tidak pernah dapat IRT lebih rendah; 100 = maks skala, 0 = min; `irt_raw` menyimpan skor asli; dijalankan saat submit, paksa kumpul, reset, ganti skala, kalibrasi

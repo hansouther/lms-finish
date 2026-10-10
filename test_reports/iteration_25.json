@@ -1,0 +1,39 @@
+{
+  "summary": "Iter25 (Pembahasan admin-controlled + Nilai Asli 0-100 + IRT alignment): backend pytest 6/10 pass, 4 fail — all failures are the SAME ROOT CAUSE in irt.align_scores: within a tied percentage group, each attempt keeps its own raw IRT (clamped), so two attempts with identical nilai asli can end up with different irt_scaled. When results are sorted by percentage ascending the IRT list is NOT non-decreasing (budi 50% irt=494, andi 50% irt=458 ⇒ sorted ties violate spec 'sorted by percentage irt_scaled non-decreasing'). The pin property (pct 100→1000, pct 0→0) and inter-group monotonicity work correctly. UI smoke tests pass: ExplanationEditor/toggle-review-{id}/tryout-show-review/review-locked/result-nilai (format '100,00'/'16,67'/'0,00') all verified live on preview URL. Admin results page header 'Nilai (0–100)' and comma-formatted percentage ('50,00') render correctly.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/admin/tryouts/{id}/results (irt.align_scores)",
+        "issue": "IRT alignment does NOT enforce equal irt_scaled for attempts with equal nilai asli. With uneven question points (10/20/30) two students at 50% get irt_scaled 494 vs 458 (and 528 vs 490 after calibrate, 528 vs 464 after reset). When sorted by percentage asc the irt_scaled list is not non-decreasing — violates spec: 'within one tryout, higher nilai asli never gets lower IRT; sorted by percentage irt_scaled is non-decreasing'. Repro: 3-question tryout points 10/20/30, student A answers Q1+Q2 (50%), student B answers Q3 (50%). RCA: irt/align_scores pools adjacent-violator percentage groups but inside each group clamps each raw value independently to [lower,upper], not to a single pooled level. Fix: within each pct group, assign the pooled block mean (or min/max) rather than individual clamped raws, so ties in nilai asli produce ties in irt_scaled.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter25_review_irt.py",
+    "/app/test_reports/pytest/iter25.xml"
+  ],
+  "action_items": [
+    "Fix irt.align_scores in /app/backend/irt.py so attempts with identical rounded percentage share the SAME irt_scaled (pool to block mean/median). After fix, re-run test_iter25_review_irt.py — tests test_results_endpoint_monotonic, test_calibrate_preserves_monotonic, test_reset_preserves_monotonic, test_force_submit_preserves_monotonic should all pass."
+  ],
+  "critical_code_review_comments": [
+    "irt.align_scores: pin() correctly forces percentage==100 to scale max and percentage==0 to scale min; PAV pooling fixes inter-group monotonic violations. BUT intra-group (ties) is NOT handled — each raw is only clamped to [lower,upper] which can leave two tied attempts with different scaled scores. This is the single root cause of all 4 failing tests.",
+    "routes_student.attempt_detail correctly gates review: when t.show_review is False and kind != 'exercise' it sets review_open=False, strips per_question to [] and pops answers before returning. Verified via test_review_closed_gating.",
+    "routes_student.attempt_detail attaches explanation + explanation_image_url from the live question document when review is open (so late-updated pembahasan reflects to past attempts). Verified via test_review_open_shows_items_and_explanation.",
+    "routes_admin.set_review (PUT /api/admin/tryouts/{id}/review) returns 200 with {ok, show_review} and persists; verified round-trip via admin list.",
+    "QuestionBody accepts explanation + explanation_image_url and update_question persists them (verified test_question_explanation_persists).",
+    "Exercise kind unconditionally opens review (routes_student.attempt_detail: review_open = t.kind=='exercise' or t.show_review). Verified test_exercise_review_always_open.",
+    "formatNilai in /app/frontend/src/lib/format.js uses id-ID locale with 2 decimal digits — renders '100,00'/'83,33'/'0,00' as required; used consistently in TryoutResult, TryoutResults, TryoutList, StudentDashboard, TryoutMonitor.",
+    "Admin TryoutResults table has TableHead 'Nilai (0–100)' with en-dash (U+2013) — matches spec column label; verified live."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter25_review_irt.py"],
+  "success_rate": {"backend": "60% (6/10 pytest; the 4 failures are one root cause in align_scores)", "frontend": "100% of smoke-tested flows"},
+  "test_credentials": "admin@lms.id/Admin@12345; siswa|budi|siti|andi|dewi|rizki|maya@lms.id / Siswa@12345",
+  "seed_data_creation": "test_iter25_review_irt.py creates TEST_ITER25_MAIN (3q, 10/20/30pt) and TEST_ITER25_EX (exercise, 1q) tryouts with cleanup via module fixture (admin.delete) at teardown. Students siti/budi/andi/dewi/rizki/maya submit attempts tied to those tryouts — all data removed on module teardown.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "After main agent fixes irt.align_scores (intra-group ties), simply rerun: pytest /app/backend/tests/test_iter25_review_irt.py -v. The 4 failing tests (test_results_endpoint_monotonic/test_calibrate_.../test_reset_.../test_force_submit_...) should all pass. UI already verified good on preview URL — toggle-review-{id}, tryout-show-review, result-nilai (comma format), irt-score-badge, review-locked, admin 'Nilai (0–100)' header. Main agent smoke test values (83.33→494, 16.67→446) weren't tied — the bug only manifests with ties, which happen naturally with uneven points.",
+  "rca of the issue": "irt.align_scores (/app/backend/irt.py line ~397-429) uses pool-adjacent-violators to fix monotonicity across different percentage groups, but within each percentage group it clamps each attempt's raw IRT independently to [lower, upper] (lines 426-428). With uneven points (e.g. 10/20/30), two students can reach the same nilai asli (50%) via different answer patterns, yielding different raw theta/scaled_score. These different raws remain different after clamping, violating 'equal nilai asli ⇒ equal irt_scaled' and causing sorted(percentage asc) IRT list to be non-monotonic. Mitigation: inside the final loop, replace per-attempt v with the pooled block mean (level[p]) — e.g. `out[aid] = int(round(_clamp(level[p], lo, hi)))` for intermediate percentages, keeping the pin for 100/0. This preserves inter-group monotonicity (already achieved by PAV) AND ties-in → ties-out."
+}
