@@ -51,7 +51,7 @@ export function ExamHeader({ tryout, timeLeft, violations, max, saveState }) {
   );
 }
 
-const optCls = (on) => `flex items-start gap-3 rounded-lg border-2 p-3 sm:p-4 cursor-pointer transition-colors duration-150 select-none ${on ? "border-[#0E7490] bg-[#E6F5F8]" : "border-[#E2E8F0] bg-white hover:border-[#94A3B8]"}`;
+const optCls = (on) => `relative flex items-start gap-3 rounded-lg border-2 p-3 sm:p-4 cursor-pointer transition-colors duration-150 select-none ${on ? "border-[#0E7490] bg-[#E6F5F8]" : "border-[#E2E8F0] bg-white hover:border-[#94A3B8]"}`;
 const Letter = ({ i, on }) => <span className={`h-7 w-7 shrink-0 rounded-full border-2 flex items-center justify-center text-xs font-bold ${on ? "bg-[#0E7490] border-[#0E7490] text-white" : "border-[#CBD5E1] text-[#475569]"}`}>{LETTERS[i]}</span>;
 
 export function AnswerArea({ q, val, setVal }) {

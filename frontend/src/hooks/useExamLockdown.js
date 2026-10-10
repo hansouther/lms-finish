@@ -30,6 +30,7 @@ export default function useExamLockdown(enabled) {
     syncKeys();
     const offFs = onFullscreenChange(syncKeys);
     const resetScroll = () => window.scrollTo(0, 0);
+    const onDocScroll = () => { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); };
 
     window.addEventListener("popstate", onPop);
     document.addEventListener("gesturestart", noGesture, { passive: false });
@@ -39,6 +40,7 @@ export default function useExamLockdown(enabled) {
     window.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("orientationchange", resetScroll);
     window.addEventListener("resize", resetScroll);
+    window.addEventListener("scroll", onDocScroll, { passive: true });
 
     return () => {
       offFs();
@@ -53,6 +55,7 @@ export default function useExamLockdown(enabled) {
       window.removeEventListener("wheel", onWheel);
       window.removeEventListener("orientationchange", resetScroll);
       window.removeEventListener("resize", resetScroll);
+      window.removeEventListener("scroll", onDocScroll);
     };
   }, [enabled]);
 }

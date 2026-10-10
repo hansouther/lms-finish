@@ -206,12 +206,12 @@ export default function TryoutEngine() {
   const isLast = idx >= total - 1;
 
   return (
-    <div className="fixed inset-0 h-[100dvh] bg-[#E9EEF2] flex flex-col overflow-hidden select-none" onContextMenu={blockCopy} onCopy={blockCopy} onCut={blockCopy} data-testid="exam-root">
+    <div className="fixed inset-0 h-[100dvh] bg-[#E9EEF2] flex flex-col overflow-hidden select-none" onContextMenu={blockCopy} onCopy={blockCopy} onCut={blockCopy} onScroll={(e) => { if (e.currentTarget.scrollTop || e.currentTarget.scrollLeft) e.currentTarget.scrollTo(0, 0); }} data-testid="exam-root">
       <ExamHeader tryout={tryout} timeLeft={timeLeft} violations={violations} max={MAX_VIOLATIONS} saveState={saveState} />
       {MAX_VIOLATIONS > 0 && !needFs && <NoFullscreenNotice />}
 
       <div className="flex-1 min-h-0 w-full max-w-6xl mx-auto flex gap-5 p-2 sm:p-5">
-        <main ref={scrollRef} className="flex-1 min-w-0 overflow-y-auto overscroll-contain bg-white rounded-lg border border-[#D5DDE3] shadow-sm" data-testid="exam-question">
+        <main ref={scrollRef} className="relative flex-1 min-w-0 overflow-y-auto overscroll-contain bg-white rounded-lg border border-[#D5DDE3] shadow-sm" data-testid="exam-question">
           <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-[#E2E8F0] px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2">
             <span className="rounded-md bg-[#0E7490] text-white px-3 py-1 text-xs sm:text-sm font-bold">Soal {idx + 1} / {total}</span>
             <span className="text-[11px] sm:text-xs text-[#94A3B8] font-mono2 truncate">{q.points} poin · {TYPE_LABEL[q.type]}</span>
