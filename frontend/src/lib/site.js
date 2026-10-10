@@ -8,7 +8,10 @@ export const DEFAULT_SITE = {
   logo_url: "", favicon_url: "", hero_image_url: "", login_image_url: "", og_image_url: "", footer_text: "",
   loader_enabled: true, loader_title: "", loader_message: "Mohon tunggu, sedang menyiapkan halaman...", loader_logo_url: "",
   loader_bg_color: "#0A1128", loader_text_color: "#FFFFFF", loader_accent_color: "#22D3EE", loader_style: "spinner", loader_min_ms: 800,
+  loader_mode: "custom", loader_media_url: "", loader_media_fit: "contain",
 };
+
+export const isVideo = (u) => /\.(mp4|webm)(\?|$)/i.test(u || "");
 
 export const assetUrl = (u) => (!u ? "" : u.startsWith("http") ? u : `${cleanBaseUrl}${u}`);
 
@@ -39,7 +42,7 @@ function applyHead(s) {
 
 function setSite(next) {
   site = { ...DEFAULT_SITE, ...next };
-  const resolved = { ...site, logo_url: assetUrl(site.logo_url), favicon_url: assetUrl(site.favicon_url), loader_logo_url: assetUrl(site.loader_logo_url) };
+  const resolved = { ...site, logo_url: assetUrl(site.logo_url), favicon_url: assetUrl(site.favicon_url), loader_logo_url: assetUrl(site.loader_logo_url), loader_media_url: assetUrl(site.loader_media_url) };
   try { localStorage.setItem(SITE_CACHE_KEY, JSON.stringify(resolved)); } catch { /* storage unavailable */ }
   applyHead(site);
   listeners.forEach((cb) => cb());

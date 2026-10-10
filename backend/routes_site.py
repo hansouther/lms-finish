@@ -14,8 +14,10 @@ router = APIRouter(prefix="/api", tags=["site"])
 admin_only = require_roles("admin")
 
 SITE_PREFIX = f"{APP_NAME}/site-assets/"
-SITE_EXT = {"png", "jpg", "jpeg", "gif", "webp", "svg", "ico"}
+SITE_EXT = {"png", "jpg", "jpeg", "gif", "webp", "svg", "ico", "mp4", "webm"}
+VIDEO_EXT = {"mp4", "webm"}
 MAX_ASSET = 5 * 1024 * 1024
+MAX_VIDEO = 15 * 1024 * 1024
 HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 DEFAULTS = {
@@ -36,6 +38,9 @@ DEFAULTS = {
     "loader_accent_color": "#22D3EE",
     "loader_style": "spinner",
     "loader_min_ms": 800,
+    "loader_mode": "custom",
+    "loader_media_url": "",
+    "loader_media_fit": "contain",
 }
 
 
@@ -57,8 +62,11 @@ class SiteSettingsBody(BaseModel):
     loader_accent_color: str = "#22D3EE"
     loader_style: Literal["spinner", "bar", "pulse"] = "spinner"
     loader_min_ms: int = Field(default=800, ge=0, le=10000)
+    loader_mode: Literal["custom", "media"] = "custom"
+    loader_media_url: str = ""
+    loader_media_fit: Literal["contain", "cover"] = "contain"
 
-    @field_validator("logo_url", "favicon_url", "hero_image_url", "login_image_url", "og_image_url", "loader_logo_url")
+    @field_validator("logo_url", "favicon_url", "hero_image_url", "login_image_url", "og_image_url", "loader_logo_url", "loader_media_url")
     @classmethod
     def _url(cls, v: str) -> str:
         v = (v or "").strip()
@@ -107,9 +115,11 @@ async def upload_site_asset(file: UploadFile = File(...), user: dict = Depends(a
     name = file.filename or ""
     ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
     if ext not in SITE_EXT:
-        raise HTTPException(status_code=400, detail="Format harus PNG, JPG, WEBP, GIF, SVG, atau ICO")
+        raise HTTPException(status_code=400, detail="Format harus PNG, JPG, WEBP, GIF, SVG, ICO, MP4, atau WEBM")
     data = await file.read()
-    if len(data) > MAX_ASSET:
+    if ext in VIDEO_EXT and len(data) > MAX_VIDEO:
+        raise HTTPException(status_code=400, detail="Ukuran video maksimal 15 MB")
+    if ext not in VIDEO_EXT and len(data) > MAX_ASSET:
         raise HTTPException(status_code=400, detail="Ukuran gambar maksimal 5 MB")
     file_id = uuid.uuid4().hex
     path = f"{SITE_PREFIX}{file_id}.{ext}"

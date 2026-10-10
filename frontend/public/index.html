@@ -40,6 +40,9 @@
             #boot-loader .bl-dots{display:flex;gap:8px}
             #boot-loader .bl-dots i{width:11px;height:11px;border-radius:50%;animation:blpulse 1s ease-in-out infinite}
             #boot-loader .bl-dots i:nth-child(2){animation-delay:.15s}#boot-loader .bl-dots i:nth-child(3){animation-delay:.3s}
+            #boot-loader .bl-media{max-width:min(80vw,560px);max-height:60vh;object-fit:contain;border-radius:16px}
+            #boot-loader .bl-media.bl-cover{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;object-fit:cover;border-radius:0}
+            #boot-loader .bl-cover ~ .bl-msg{margin-top:auto;padding:10px 16px;border-radius:12px;background:rgba(0,0,0,.45);color:#fff;opacity:1}
             @keyframes blspin{to{transform:rotate(360deg)}}
             @keyframes blbar{0%{left:-40%}100%{left:100%}}
             @keyframes blpulse{0%,100%{transform:scale(.6);opacity:.4}50%{transform:scale(1);opacity:1}}
@@ -62,27 +65,36 @@
                 el.setAttribute("aria-live", "polite");
                 el.style.background = bg;
                 el.style.color = fg;
-                var logo = s.loader_logo_url || s.logo_url;
-                if (logo && /^https?:\/\//.test(logo)) {
-                    var img = document.createElement("img");
-                    img.className = "bl-logo"; img.alt = ""; img.src = logo;
-                    el.appendChild(img);
+                var media = s.loader_media_url;
+                if (s.loader_mode === "media" && media && /^https?:\/\//.test(media)) {
+                    var cover = s.loader_media_fit === "cover", mv = /\.(mp4|webm)(\?|$)/i.test(media);
+                    var me = document.createElement(mv ? "video" : "img");
+                    me.className = cover ? "bl-media bl-cover" : "bl-media"; me.src = media;
+                    if (mv) { me.autoplay = true; me.muted = true; me.loop = true; me.playsInline = true; me.setAttribute("playsinline", ""); me.setAttribute("muted", ""); } else { me.alt = ""; }
+                    el.appendChild(me);
                 } else {
-                    var mark = document.createElement("div");
-                    mark.className = "bl-mark"; mark.style.background = ac; mark.textContent = name.charAt(0).toUpperCase();
-                    el.appendChild(mark);
+                    var logo = s.loader_logo_url || s.logo_url;
+                    if (logo && /^https?:\/\//.test(logo)) {
+                        var img = document.createElement("img");
+                        img.className = "bl-logo"; img.alt = ""; img.src = logo;
+                        el.appendChild(img);
+                    } else {
+                        var mark = document.createElement("div");
+                        mark.className = "bl-mark"; mark.style.background = ac; mark.textContent = name.charAt(0).toUpperCase();
+                        el.appendChild(mark);
+                    }
+                    var t = document.createElement("p");
+                    t.className = "bl-title"; t.textContent = s.loader_title || name;
+                    el.appendChild(t);
+                    var style = s.loader_style || "spinner", ind = document.createElement("div");
+                    if (style === "bar") { ind.className = "bl-bar"; var b = document.createElement("i"); b.style.background = ac; ind.appendChild(b); }
+                    else if (style === "pulse") { ind.className = "bl-dots"; for (var i = 0; i < 3; i++) { var d = document.createElement("i"); d.style.background = ac; ind.appendChild(d); } }
+                    else { ind.className = "bl-spin"; ind.style.borderTopColor = ac; }
+                    el.appendChild(ind);
                 }
-                var t = document.createElement("p");
-                t.className = "bl-title"; t.textContent = s.loader_title || name;
-                el.appendChild(t);
-                var style = s.loader_style || "spinner", ind = document.createElement("div");
-                if (style === "bar") { ind.className = "bl-bar"; var b = document.createElement("i"); b.style.background = ac; ind.appendChild(b); }
-                else if (style === "pulse") { ind.className = "bl-dots"; for (var i = 0; i < 3; i++) { var d = document.createElement("i"); d.style.background = ac; ind.appendChild(d); } }
-                else { ind.className = "bl-spin"; ind.style.borderTopColor = ac; }
-                el.appendChild(ind);
                 var m = document.createElement("p");
-                m.className = "bl-msg"; m.textContent = s.loader_message == null ? "Mohon tunggu, sedang menyiapkan halaman..." : s.loader_message;
-                el.appendChild(m);
+                m.className = "bl-msg"; m.style.position = "relative"; m.textContent = s.loader_message == null ? "Mohon tunggu, sedang menyiapkan halaman..." : s.loader_message;
+                if (m.textContent) el.appendChild(m);
                 document.body.appendChild(el);
                 if (s.favicon_url || s.logo_url) {
                     var fav = s.favicon_url || s.logo_url;

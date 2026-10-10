@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Upload, Trash2, Save, Globe, Image as ImageIcon, Timer } from "lucide-react";
 import api, { apiError } from "@/lib/api";
-import { assetUrl, updateSiteLocal, DEFAULT_SITE } from "@/lib/site";
+import { assetUrl, updateSiteLocal, DEFAULT_SITE, isVideo } from "@/lib/site";
 import PageHeader from "@/components/common/PageHeader";
 import { Loading } from "@/components/common/States";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,14 @@ function Section({ icon: Icon, title, desc, children }) {
   );
 }
 
-function ImageField({ label, hint, value, onChange, testid, preview = "h-16 w-16" }) {
+const IMG_ACCEPT = "image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/x-icon,.ico";
+
+function MediaThumb({ src, testid }) {
+  if (isVideo(src)) return <video src={assetUrl(src)} autoPlay muted loop playsInline className="h-full w-full object-contain" data-testid={`${testid}-preview`} />;
+  return <img src={assetUrl(src)} alt="" className="h-full w-full object-contain" data-testid={`${testid}-preview`} />;
+}
+
+function ImageField({ label, hint, value, onChange, testid, preview = "h-16 w-16", accept = IMG_ACCEPT }) {
   const ref = useRef(null);
   const [busy, setBusy] = useState(false);
   const pick = async (e) => {
@@ -43,9 +50,9 @@ function ImageField({ label, hint, value, onChange, testid, preview = "h-16 w-16
       {hint && <p className="text-[11px] text-[#94A3B8] mt-0.5">{hint}</p>}
       <div className="mt-2 flex items-center gap-3 flex-wrap">
         <div className={`${preview} rounded-lg border border-dashed border-[#CBD5E1] bg-[#F8FAFC] flex items-center justify-center overflow-hidden`}>
-          {value ? <img src={assetUrl(value)} alt="" className="h-full w-full object-contain" data-testid={`${testid}-preview`} /> : <ImageIcon className="h-5 w-5 text-[#CBD5E1]" />}
+          {value ? <MediaThumb src={value} testid={testid} /> : <ImageIcon className="h-5 w-5 text-[#CBD5E1]" />}
         </div>
-        <input ref={ref} type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/x-icon,.ico" className="hidden" onChange={pick} data-testid={`${testid}-input`} />
+        <input ref={ref} type="file" accept={accept} className="hidden" onChange={pick} data-testid={`${testid}-input`} />
         <Button type="button" variant="outline" size="sm" className="rounded-full" disabled={busy} onClick={() => ref.current?.click()} data-testid={`${testid}-upload`}>
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Unggah
         </Button>
@@ -67,7 +74,21 @@ function ColorField({ label, value, onChange, testid }) {
   );
 }
 
+function MediaPreview({ f }) {
+  const cover = f.loader_media_fit === "cover";
+  const cls = cover ? "absolute inset-0 h-full w-full object-cover" : "max-h-40 max-w-[80%] object-contain rounded-xl";
+  return (
+    <div className="relative rounded-xl h-64 overflow-hidden flex flex-col items-center justify-center gap-3 text-center p-4" style={{ background: f.loader_bg_color, color: f.loader_text_color }} data-testid="loader-preview">
+      {isVideo(f.loader_media_url)
+        ? <video key={f.loader_media_url} src={assetUrl(f.loader_media_url)} autoPlay muted loop playsInline className={cls} data-testid="loader-preview-media" />
+        : <img src={assetUrl(f.loader_media_url)} alt="" className={cls} data-testid="loader-preview-media" />}
+      {f.loader_message && <p className={`relative text-xs max-w-xs ${cover ? "mt-auto px-3 py-2 rounded-lg bg-black/45 text-white" : "opacity-75"}`}>{f.loader_message}</p>}
+    </div>
+  );
+}
+
 function LoaderPreview({ f }) {
+  if (f.loader_mode === "media" && f.loader_media_url) return <MediaPreview f={f} />;
   const logo = f.loader_logo_url || f.logo_url;
   const ind = f.loader_style === "bar"
     ? <div className="w-40 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,.15)" }}><div className="h-full w-2/5 rounded-full animate-pulse" style={{ background: f.loader_accent_color }} /></div>
@@ -135,7 +156,33 @@ export default function SiteSettings() {
             <Label className="text-[#0A1128]">Aktifkan loading screen</Label>
             <Switch checked={f.loader_enabled} onCheckedChange={set("loader_enabled")} data-testid="loader-enabled-switch" />
           </div>
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-[#0A1128]">Jenis Loading Screen</Label>
+            <Select value={f.loader_mode} onValueChange={set("loader_mode")}>
+              <SelectTrigger className="mt-1.5 h-11" data-testid="loader-mode-select"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="custom">Kustom (logo, judul, animasi)</SelectItem>
+                <SelectItem value="media">GIF / Video pendek</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {f.loader_mode === "media" && (
+            <div className="space-y-4 rounded-lg border border-[#E2E8F0] p-3" data-testid="loader-media-fields">
+              <ImageField label="GIF / Video Loading" hint="GIF/PNG/WEBP maks. 5 MB, atau video MP4/WEBM maks. 15 MB (disarankan 2–6 detik, diputar berulang tanpa suara)." value={f.loader_media_url} onChange={set("loader_media_url")} testid="loader-media" preview="h-20 w-32" accept="image/gif,image/png,image/jpeg,image/webp,video/mp4,video/webm" />
+              <div>
+                <Label className="text-[#0A1128]">Tampilan Media</Label>
+                <Select value={f.loader_media_fit} onValueChange={set("loader_media_fit")}>
+                  <SelectTrigger className="mt-1.5 h-11" data-testid="loader-media-fit-select"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="contain">Di tengah (ukuran asli)</SelectItem>
+                    <SelectItem value="cover">Penuh layar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {!f.loader_media_url && <p className="text-[11px] text-amber-600">Belum ada media — loading screen kustom akan dipakai.</p>}
+            </div>
+          )}
+          {f.loader_mode !== "media" && <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-[#0A1128]">Judul</Label>
               <Input value={f.loader_title} onChange={set("loader_title")} maxLength={80} placeholder={f.site_name} className="mt-1.5 h-11" data-testid="loader-title-input" />
@@ -151,7 +198,7 @@ export default function SiteSettings() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
+          </div>}
           <div>
             <Label className="text-[#0A1128]">Pesan</Label>
             <Input value={f.loader_message} onChange={set("loader_message")} maxLength={200} className="mt-1.5 h-11" data-testid="loader-message-input" />
@@ -166,7 +213,7 @@ export default function SiteSettings() {
             <Input type="number" min={0} max={10} step={0.1} value={(Number(f.loader_min_ms) || 0) / 1000} onChange={(e) => set("loader_min_ms")(Math.round(Math.min(10, Math.max(0, Number(e.target.value) || 0)) * 1000))} className="mt-1.5 h-11 w-32" data-testid="loader-min-input" />
             <p className="text-[11px] text-[#94A3B8] mt-1">Loading screen tetap tampil sampai website siap, lalu minimal selama durasi ini.</p>
           </div>
-          <ImageField label="Logo Loading Screen" hint="Kosongkan untuk memakai logo website." value={f.loader_logo_url} onChange={set("loader_logo_url")} testid="loader-logo" />
+          {f.loader_mode !== "media" && <ImageField label="Logo Loading Screen" hint="Kosongkan untuk memakai logo website." value={f.loader_logo_url} onChange={set("loader_logo_url")} testid="loader-logo" />}
         </Section>
 
         <Section icon={Timer} title="Pratinjau Loading Screen" desc="Tampilan yang dilihat pengunjung saat website dibuka.">
