@@ -44,3 +44,9 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - Duplikat soal (kunci = teks + pilihan dinormalisasi): impor (preview/validate/import-rows/import) melewati soal yang sudah ada di Try Out tujuan atau berulang di berkas + notifikasi
 - Kolom wajib template: type,text,option_a..e,correct,points,competency,tingkat (400 bila header hilang; points/competency/tingkat wajib valid per baris); header wajib berwarna di Excel + petunjuk WAJIB/OPSIONAL
 - Cek Duplikat Soal (ManageTryouts): GET /admin/question-bank/duplicates, rapikan otomatis (sisakan 1 per Try Out), POST /admin/questions/bulk-delete
+
+## Update Jun 2026 — CBT Lockdown semua device (additive only)
+- useExamLockdown hook: kunci back button, pinch-zoom, shortcut (Ctrl+P/S/U, F5, F12), scroll bounce, Esc key lock (Chrome desktop)
+- PseudoFullscreenGate untuk iPhone/in-app browser/browser tanpa Fullscreen API + rekomendasi Chrome/Android
+- Pelanggaran tetap memakai peringatan admin (tab_warning_limit) + auto-submit existing
+- Backlog: mode kiosk PWA, deteksi split-screen/floating window Android

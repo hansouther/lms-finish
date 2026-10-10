@@ -1,0 +1,43 @@
+{
+  "summary": "Frontend-only test for CBT Try Out device compatibility (fullscreen lockdown + iPhone pseudo-fullscreen). Pre-check: backend was crashing with ModuleNotFoundError 'et_xmlfile' (openpyxl dependency); installed the module, added to requirements.txt, restarted backend, and backend recovered. Then executed Playwright flows for desktop Chromium (requestFullscreen available) and simulated iPhone (fullscreen API deleted, iPhone UA + 390x844 viewport). All documented behaviors in the review request work as specified. Minor timing issue in dialog detection was due to async exitFullscreen; dialog does appear (verified via screenshot showing 'Peringatan 1 dari 5').",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "desktop_chromium_fullscreen_gate": "PASS - fullscreen-gate shown on tab_warning_limit>0 tryout, fullscreen-enter button requests fullscreen (document.fullscreenElement truthy), gate hides, exam-root renders without console errors.",
+    "exam_lock_class_and_viewport_meta": "PASS - html.exam-lock added on exam entry; viewport meta set to 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'; restored to original on submit.",
+    "exit_fullscreen_triggers_warning": "PASS - document.exitFullscreen() -> tab-warning-dialog appears with 'Peringatan 1 dari 5', exam-violation-counter updates 0/5 -> 1/5; tab-warning-continue re-enters flow.",
+    "browser_back_prevented": "PASS - page.go_back() keeps URL on /student/exam/<id>.",
+    "iphone_pseudo_fullscreen": "PASS - with Element.prototype.requestFullscreen removed + iPhone UA, pseudo-fullscreen-gate renders. pseudo-fullscreen-recommend contains 'Google Chrome', 'Android', and iPhone-specific DND hint. pseudo-fullscreen-start hides gate; no-fullscreen-notice bar is shown.",
+    "mobile_layout_390x844": "PASS - exam-mobile-nav visible, no horizontal overflow, m-prev/m-next/m-open-palette/m-finish-exam all functional, m-palette-sheet opens on 'LayoutGrid' tap, palette-N selects question.",
+    "answer_navigation_submit": "PASS - opt-* clickable, m-next cycles through 5 questions, m-finish-exam -> confirm-submit -> toast -> navigate to /student/results/<attempt_id>; exam-lock class removed; viewport meta restored to pre-exam value.",
+    "console_errors_during_exam": "No app-level errors. Only unrelated Google Sign-In FedCM/GSI warnings and pre-login 401s (expected)."
+  },
+  "test_report_links": [],
+  "action_items": [
+    "CRITICAL (now fixed by testing agent): backend was crashing on import due to missing 'et_xmlfile' module required by openpyxl. Installed et_xmlfile==2.0.0 and appended to /app/backend/requirements.txt. Verify this persists in your container image.",
+    "Optional: consider calling startPseudo() automatically when pseudo-gate is shown AND tab_warning_limit is 0 (currently the PseudoFullscreenGate only renders when MAX_VIOLATIONS > 0, so limit=0 regression is fine)."
+  ],
+  "critical_code_review_comments": [
+    "useExamLockdown pushes an extra history entry; if the user had meaningful back history inside /student (e.g. coming from TryoutList) they must still submit to leave — expected per spec.",
+    "TryoutEngine.js finishTo() calls localStorage.removeItem for answers/flags for the current attempt only; good, prevents leaking state across students.",
+    "fullscreen.js fsSupported() returns false when `document.fullscreenEnabled === false` which correctly triggers the pseudo-fullscreen gate branch for in-app/iPhone browsers.",
+    "The exam-violation-counter aria/title is present only when max>0 which is correct."
+  ],
+  "updated_files": [
+    "/app/backend/requirements.txt (appended et_xmlfile==2.0.0)"
+  ],
+  "success_rate": {"backend": "N/A (frontend-only test; backend was fixed to run)", "frontend": "100% of requested flows"},
+  "test_credentials": "siswa@lms.id / Siswa@12345 (completed to_3 already); budi@lms.id / Siswa@12345 used for iPhone flow (also now has a completed attempt for to_3). Future test agents should use siti@lms.id or andi@lms.id (Siswa@12345) if attempts are needed on to_3.",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Only tryout to_3 (Latihan Soal Campuran, 5 soal, tab_warning_limit=5) is currently 'active' and available to students. Each demo student can submit it only once; siswa@lms.id and budi@lms.id have already consumed their attempts in this iteration. To re-test exam flows, use siti@lms.id or andi@lms.id, or ask admin to clear attempts / create a new active tryout. Backend has a dependency on et_xmlfile; the installation is now in requirements.txt but the container may need a rebuild.",
+  "rca of the issue": "N/A — no feature bugs. Collateral finding: backend had a missing transitive dependency 'et_xmlfile' (required by openpyxl 3.1.5). Backend was returning 502 (Cloudflare / uvicorn couldn't import routes_admin). Fix: `pip install et_xmlfile==2.0.0` and added to requirements.txt."
+}
