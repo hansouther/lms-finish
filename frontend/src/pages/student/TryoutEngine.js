@@ -44,7 +44,8 @@ export default function TryoutEngine() {
   const [pseudoReady, setPseudoReady] = useState(false);
   const lastViolationRef = useRef(0);
   const [fontStep, setFontStep] = useState(() => {
-    const v = Number(localStorage.getItem("exam_font_step"));
+    const raw = localStorage.getItem("exam_font_step");
+    const v = raw == null ? NaN : Number(raw);
     return Number.isInteger(v) && v >= 0 && v < FONT_STEPS.length ? v : 1;
   });
   const changeFont = (d) => setFontStep((s) => {

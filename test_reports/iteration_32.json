@@ -1,0 +1,35 @@
+{
+  "summary": "Verified A- / A+ font-size control in TryOut exam (/student/exam/<id>) on desktop 1920x1080 and mobile 390x844 using long-question seed TEST_IT31_LONG_5a276a. 18/18 behavioural assertions passed: increase steps 100→115→130→150 (A+ disabled at 150%), decrease 150→130→115→100→90 (A- disabled at 90%), body visibly grows via CSS zoom (820x1852 at 100% → 820x3828 at 150%), no horizontal page overflow at 150% on either viewport (sw===cw=1920 / 390), header stays visible (y=0, h=56), localStorage.exam_font_step persists across next question and page reload (value='4'), clicking the last answer option at 150% keeps exam-root.scrollTop===0 and header.y<5 on both desktop and mobile (iteration_31 regression intact). Mobile sticky bar: '4 poin · Pilihan Ganda' span has display:none (hidden <sm), bar height=53px (no wrap). FontSizeControl testids font-size-control / font-size-decrease / font-size-value / font-size-increase all present and correctly disabled at bounds. HOWEVER, found one functional bug in default initial value when localStorage is empty.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "TryoutEngine.fontStep useState initializer",
+        "issue": "Default initial font step is 90% (step 0) instead of the specified 100% (step 1) when localStorage.exam_font_step is empty. Root cause: `Number(localStorage.getItem('exam_font_step'))` returns 0 when the item is null, and 0 passes `Number.isInteger(v) && v >= 0 && v < FONT_STEPS.length`, so the fallback-to-1 branch is never hit. First-time users / users on a fresh device therefore see question text at 90% by default, which violates the spec 'font-size-value (default 100%)' and makes A- appear disabled on first entry.",
+        "selector": "[data-testid=\"font-size-value\"]",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix default fontStep initializer in /app/frontend/src/pages/student/TryoutEngine.js (line ~46-49). Suggested fix: `const raw = localStorage.getItem('exam_font_step'); const v = raw == null ? NaN : Number(raw); setFontStep(Number.isInteger(v) && v >= 0 && v < FONT_STEPS.length ? v : 1);` — or wrap with `raw !== null && Number.isInteger(v) ...`. Current code treats missing key as 0 because Number(null)===0.",
+    "After fix, re-verify: new student (clear localStorage) opening /student/exam/<id> sees font-size-value='100%', A- enabled, A+ enabled."
+  ],
+  "critical_code_review_comments": [
+    "TryoutEngine.js L46-49: `Number(localStorage.getItem(k))` of a null key equals 0 which incorrectly passes the integer-range guard and sets fontStep=0 (90%) instead of the documented 100% default. One-line fix needed.",
+    "FontSizeControl in ExamParts.jsx uses CSS `zoom` on exam-question-body (L229). `zoom` is non-standard (works in Chromium/WebKit but ignored by Firefox < v126); consider `transform: scale(...)` with `transform-origin` or a CSS variable driving `font-size` for stricter cross-browser support. Not blocking for Chrome/Android target.",
+    "FontSizeControl buttons A- / A+ are plain <button> with aria-label; good. The percent display span has data-testid but no aria-live, so screen readers won't announce changes. Minor accessibility improvement.",
+    "The sticky bar's '{q.points} poin · {TYPE_LABEL[q.type]}' span has `hidden sm:inline` — correct for mobile. No testid though; if main agent wants to automate meta visibility it could add data-testid='question-meta'."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "94% (17/18 spec items pass; default-100% initializer fails)"},
+  "test_credentials": "siswa@lms.id / Siswa@12345 (used). budi/siti/andi share Siswa@12345 but andi needs biodata completion first.",
+  "seed_data_creation": "Reused existing TEST_IT31_LONG_5a276a (id 495ae50e88544cda9a98d5d715d7960b, tab_warning_limit=0, 5 long questions) from iteration_31. No new seed required.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Font-size feature almost fully working. ONLY failing spec item is the default-100% initializer bug in TryoutEngine.js (Number(null)===0 passes isInteger). Everything else (zoom, bounds, persistence, mobile layout, iter31 scroll regression) passes. After main agent fixes the initializer: clear localStorage.exam_font_step and verify the exam page opens at 100% with A- enabled.",
+  "rca of the issue": "File /app/frontend/src/pages/student/TryoutEngine.js lines 46-49:\n```\nconst [fontStep, setFontStep] = useState(() => {\n  const v = Number(localStorage.getItem('exam_font_step'));\n  return Number.isInteger(v) && v >= 0 && v < FONT_STEPS.length ? v : 1;\n});\n```\nWhen `exam_font_step` is missing, `localStorage.getItem` returns `null`. `Number(null)` evaluates to `0` (not `NaN`), and `Number.isInteger(0)` is `true`, with `0 >= 0 && 0 < 5` also true. So the guard admits 0 and the state defaults to `FONT_STEPS[0] = 0.9` (=90%) instead of the fallback `1` (=100%). Mitigation: null-check the raw value first, e.g. `const raw = localStorage.getItem('exam_font_step'); const v = raw === null ? NaN : Number(raw);` — then the existing isInteger guard will correctly fall through to the default `1`."
+}
