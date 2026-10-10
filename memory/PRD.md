@@ -23,3 +23,9 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - Total pelanggaran disimpan di koleksi tryout_violations (tetap ada walau admin "Ulangi"); tag "Terindikasi mencontek: Nx keluar tab" di Pantau Peserta & Hasil
 - Opsi per Try Out: shuffle_questions & shuffle_options (acak deterministik per siswa)
 - Bank soal: ambil/salin soal dari Try Out lain (GET /admin/question-bank, POST /admin/tryouts/{id}/questions/copy)
+## Iteration 6 (Jun 2026)
+- Soal punya field `bidang` (mapel; default mapel Try Out, soal lama di-backfill saat startup) & `materi` (topik); bisa diisi di form, massal (bulk-materi), atau kolom impor bidang/materi
+- Bank soal: filter Bidang, Materi, Kompetensi, Tingkat Kesulitan, teks (GET /admin/question-bank -> {items, facets})
+- `tab_warning_limit` per Try Out (0-20, default 5, 0 = deteksi nonaktif)
+## Backlog
+- Kolom bidang/materi di template CSV/Excel

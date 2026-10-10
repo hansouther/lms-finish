@@ -1,0 +1,31 @@
+{
+  "summary": "Iter24 (Bank Soal by Bidang/Materi + per-tryout tab_warning_limit): backend pytest 14/14 pass; Playwright UI tests pass end-to-end on preview URL. Verified: (a) POST /api/admin/tryouts/{id}/questions defaults empty bidang to tryout.subject; question card renders question-bidang-{id} chip 'Matematika' and question-materi-{id} chip 'Materi belum diisi' when materi empty. (b) Bulk materi: select-all + bulk-materi-input='Trigonometri' + apply-bulk-materi -> both chips update to 'Trigonometri' (POST /api/admin/tryouts/{id}/questions/bulk-materi returns updated=2; empty payload returns 400). (c) GET /api/admin/question-bank returns {items, facets:{bidang, materi}} with facets grouping materi per bidang (Matematika->[Aljabar,Geometri]); filters bidang+materi, competency, difficulty, q(text) all work; exclude=current tryout excludes own questions (UI search 'UI Q' from current tryout returned '0 soal ditemukan' in bank dialog). All filters bank-filter-bidang/materi/competency/difficulty + question-bank-search + bank-select-all + bank-result-count render in open-question-bank dialog. (d) ManageTryouts dialog has tryout-tab-limit number input; set to 2 persists; card badge tryout-tab-limit-badge-{id} shows 'Maks 2x pindah tab' at 2 and 'Deteksi tab nonaktif' at 0; backend rejects >20 with 422; default is 5 when omitted; PUT updates it (round-trip verified via admin list). (e) TryoutEngine with limit=2: exam-violation-counter shows '0/2' initially; simulated visibilitychange hidden->visible 1x opens tab-warning-dialog and counter -> '1/2'; 2nd simulated tab leave auto-submits & redirects to /student/results/{aid}. With limit=0: counter not rendered and dialog not shown on tab leave; POST /api/student/attempts/{aid}/violation returns 400 'Deteksi pindah tab tidak aktif'. (f) Student /api/student/tryouts/{tid} returns tab_warning_limit=0 for limit-0 tryouts. (g) Copy from bank still works (POST /api/admin/tryouts/{dst}/questions/copy, copied_from field set).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter24_bidang_materi.py",
+    "/app/test_reports/pytest/iter24.xml"
+  ],
+  "action_items": [
+    "iter23 test_question_bank_and_copy is stale: it iterates GET /api/admin/question-bank as a list of tryouts, but the endpoint now returns {items, facets}. Not a production bug - main agent may wish to delete or update that test (test_iter23_tabguard.py:138-148) for hygiene."
+  ],
+  "critical_code_review_comments": [
+    "routes_admin.question_bank builds facets from ALL question-bank rows (base filter only on exclude), independent of selected bidang/materi/competency/difficulty — correct so filter options don't collapse while user narrows.",
+    "create_question defaults bidang to tryout.subject when payload bidang empty; update_question does NOT re-default (preserves whatever admin set, including empty). Fine for current spec, but note: editing a question and clearing bidang leaves it empty (chip 'Tanpa bidang' facet). Consider whether update should also fallback.",
+    "bulk_materi only sets fields present in body (bidang/materi); 400 only when both unset or question_ids empty — correct.",
+    "tab_limit(t) returns 5 when field missing (legacy tryouts without the new field will still have the default 5 behavior).",
+    "tab_violation endpoint correctly returns 400 for exercise kind and limit<=0; 409 for already-submitted. All covered by tests."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter24_bidang_materi.py"],
+  "success_rate": {"backend": "100% (14/14)", "frontend": "100% of critical flows"},
+  "test_credentials": "admin@lms.id/Admin@12345, siti@lms.id/Siswa@12345, andi@lms.id/Siswa@12345, budi@lms.id/Siswa@12345",
+  "seed_data_creation": "Backend pytest creates TEST_ITER24_* tryouts (SRC, DST, BAD, ZERO, LIM2) with fixtures/teardown. UI test created and deleted TEST_UI_ITER24, TEST_UI_ITER24B, TEST_UI_ITER24C. Verified all cleanup (delete returned 200). No persistent seed data remains.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All iter24 features verified. New question-bank response shape is {items, facets} — update any older tests expecting a list. Student 'exam' route is /student/exam/{tryout_id} (not /student/tryouts/{tid}/attempt/{aid}). Simulated violations in UI done by dispatching visibilitychange events with mocked visibilityState via Object.defineProperty.",
+  "rca of the issue": "N/A — no issues found"
+}
