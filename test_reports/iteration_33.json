@@ -1,0 +1,30 @@
+{
+  "summary": "Iteration 33 verified the token-fallback fix for cross-site cookie blocking (Safari/iOS/macOS/Huawei). Backend: 15/15 pytest tests passed - login/register/google return access_token+refresh_token in JSON body, /api/auth/me works with only Authorization: Bearer header (no cookies), /api/auth/refresh accepts X-Refresh-Token header without cookie, /api/files/*?token=<access> authenticates via query token. Frontend (Playwright + page.route to strip Set-Cookie on every /api/** response + periodic context.clear_cookies): all 4 roles (admin, siswa, tutor, proktor) login successfully, reach their dashboards, persist session across page reload (tokens remain in localStorage), navigate to multiple protected pages, and produce zero non-auth 401 errors. Logout clears localStorage auth_access_token/auth_refresh_token (verified for admin, student, proctor; tutor logout button was not detected by test selectors but endpoint works per backend tests).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter33_token_fallback.py",
+    "/app/test_reports/pytest/iter33.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "security.py _extract_token correctly checks Bearer -> cookie -> ?token= query param (good order).",
+    "routes_auth.py /refresh returns new access_token in JSON body AND also sets a cookie - cookie set is harmless but redundant for the Safari path; current behaviour is backwards-compatible.",
+    "api.js response interceptor strips access_token/refresh_token from user objects before React state receives them - verified: /auth/me responses never leak these tokens to UI state.",
+    "api.js interceptor correctly avoids retry on /auth/(login|refresh|logout|register) 401s to prevent loops.",
+    "media.js fileUrl appends token only for internal /api/files/* URLs and only when a token exists; token is URL-encoded. Note: access tokens placed in query strings can appear in server access logs / Referer headers; acceptable trade-off but worth documenting.",
+    "AuthContext logout calls clearTokens() AND the backend /auth/logout; frontend state is cleared even if backend call fails (good)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "100% (4/4 roles login+reload+nav with cookies stripped)"},
+  "test_credentials": "Admin admin@lms.id/Admin@12345, Siswa siswa@lms.id/Siswa@12345, Tutor tutor@lms.id/Tutor@12345, Proktor proktor@lms.id/Proktor@12345",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_iter33_token_fallback.py is a reusable regression suite for the Safari-cookie-blocking fix. Run with: pytest /app/backend/tests/test_iter33_token_fallback.py -v -o addopts='' . Playwright technique for simulating cookie-blocking browsers: context.route('**/api/**', fn) that fetches response and fulfills with headers minus 'set-cookie', plus a periodic context.clear_cookies(). The /tutor/materi path does not exist in the current router (console warning 'No routes matched location /tutor/materi') - not related to this bug fix; previous iteration (32) tutor routes may use different paths.",
+  "rca of the issue": "RCA validated and fix confirmed: Prior to this change, auth relied solely on httpOnly SameSite=None cookies. Safari/iOS/Huawei block third-party cookies by default when the frontend and backend are on different registrable domains, so after login the Set-Cookie was dropped and all subsequent requests had no credentials -> 401. Mitigation implemented: dual delivery of tokens - cookies for Chromium-with-cookies users (backward compatible) AND access/refresh tokens in JSON body stored in localStorage with Authorization: Bearer header for other browsers. Query-param ?token= handles <img src>/<a href> file links that cannot send custom headers. All layers verified working."
+}
