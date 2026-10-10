@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import QuestionBankDialog from "@/components/common/QuestionBankDialog";
 import ExplanationEditor from "@/components/common/ExplanationEditor";
+import ImportPreviewDialog from "@/components/common/ImportPreviewDialog";
 
 const TYPES = [
   { v: "single", l: "Pilihan Ganda" },
@@ -64,6 +65,8 @@ export default function TryoutBuilder() {
   const [blueprintVersion, setBlueprintVersion] = useState(0);
   const [calibrating, setCalibrating] = useState(false);
   const [bankOpen, setBankOpen] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [previewing, setPreviewing] = useState(false);
   const [bulkMateri, setBulkMateri] = useState("");
   const materiList = [...new Set((questions || []).map((q) => q.materi).filter(Boolean))];
   const applyBulkMateri = async () => {
@@ -132,13 +135,13 @@ export default function TryoutBuilder() {
     if (!file) return;
     const fd = new FormData();
     fd.append("file", file);
-    try {
-      const { data } = await api.post(`/admin/tryouts/${id}/questions/import`, fd);
-      toast.success(`${data.imported} soal berhasil diimpor`);
-      if (data.errors?.length) toast.error(`${data.errors.length} baris gagal. ${data.errors[0]}`);
-      refetch(); bumpBlueprint();
-    } catch (err) { toast.error(apiError(err)); }
     e.target.value = "";
+    setPreviewing(true);
+    try {
+      const { data } = await api.post("/admin/questions/import/preview", fd);
+      setPreview(data);
+    } catch (err) { toast.error(apiError(err)); }
+    finally { setPreviewing(false); }
   };
 
   const openNew = () => { setForm(EMPTY); setEditId(null); setOpen(true); };
@@ -221,7 +224,8 @@ export default function TryoutBuilder() {
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" onClick={downloadTemplate} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="download-template"><FileDown className="h-4 w-4" /> Template CSV</Button>
           <Button variant="outline" onClick={downloadTemplateXlsx} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="download-template-xlsx"><FileSpreadsheet className="h-4 w-4" /> Template Excel</Button>
-          <Button variant="outline" onClick={() => fileRef.current?.click()} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="import-questions"><Upload className="h-4 w-4" /> Impor CSV/Excel/ZIP</Button>
+          <Button variant="outline" onClick={() => fileRef.current?.click()} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" disabled={previewing} data-testid="import-questions">{previewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Impor CSV/Excel/ZIP</Button>
+          {preview && <ImportPreviewDialog tryoutId={id} preview={preview} onClose={() => setPreview(null)} onImported={() => { refetch(); bumpBlueprint(); }} />}
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.zip" className="hidden" onChange={onImport} data-testid="import-file" />
           <Button variant="outline" onClick={() => setBankOpen(true)} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="open-question-bank"><Library className="h-4 w-4" /> Ambil dari Bank Soal</Button>
           <QuestionBankDialog tryoutId={id} open={bankOpen} onOpenChange={setBankOpen} onCopied={() => { refetch(); bumpBlueprint(); }} />

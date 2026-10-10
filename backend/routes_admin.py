@@ -556,6 +556,19 @@ async def create_question(tryout_id: str, body: QuestionBody, user: dict = Depen
     return {k: v for k, v in doc.items() if k != "_id"}
 
 
+def _bank_query(exclude, bidang, materi, competency, q):
+    query = {"tryout_id": {"$ne": exclude}} if exclude else {}
+    if bidang:
+        query["bidang"] = None if bidang == "Tanpa bidang" else bidang
+    if materi:
+        query["materi"] = materi
+    if competency:
+        query["competency"] = competency
+    if q:
+        query["text"] = {"$regex": re.escape(q.strip()), "$options": "i"}
+    return query
+
+
 @router.get("/question-bank")
 async def question_bank(exclude: Optional[str] = None, bidang: Optional[str] = None, materi: Optional[str] = None,
                         competency: Optional[str] = None, difficulty: Optional[str] = None, q: Optional[str] = None,
@@ -568,18 +581,9 @@ async def question_bank(exclude: Optional[str] = None, bidang: Optional[str] = N
         materi_by_bidang.setdefault(b, set())
         if r.get("materi"):
             materi_by_bidang[b].add(r["materi"])
-    query = dict(base)
-    if bidang:
-        query["bidang"] = None if bidang == "Tanpa bidang" else bidang
-    if materi:
-        query["materi"] = materi
-    if competency:
-        query["competency"] = competency
-    if q:
-        query["text"] = {"$regex": re.escape(q.strip()), "$options": "i"}
     proj = {"_id": 0, "id": 1, "tryout_id": 1, "type": 1, "text": 1, "points": 1, "competency": 1, "bidang": 1,
             "materi": 1, "difficulty_label": 1, "irt_calibrated": 1, "irt_b": 1, "image_url": 1}
-    items = await db.questions.find(query, proj).sort([("bidang", 1), ("materi", 1)]).to_list(3000)
+    items = await db.questions.find(_bank_query(exclude, bidang, materi, competency, q), proj).sort([("bidang", 1), ("materi", 1)]).to_list(3000)
     for it in items:
         it["difficulty"] = irt.effective_label(it)
     if difficulty:
@@ -590,6 +594,68 @@ async def question_bank(exclude: Optional[str] = None, bidang: Optional[str] = N
         it["source_title"] = titles.get(it["tryout_id"])
     return {"items": items, "facets": {"bidang": sorted(materi_by_bidang),
                                        "materi": {k: sorted(v) for k, v in materi_by_bidang.items()}}}
+
+
+def _question_to_row(q: dict) -> dict:
+    t = q.get("type")
+    opts = q.get("options") or []
+    correct = q.get("correct_answers") or []
+    row = {"type": t, "text": q.get("text", ""), "points": q.get("points", 1), "competency": q.get("competency") or "umum",
+           "tingkat": irt.effective_label(q), "bidang": q.get("bidang") or "", "materi": q.get("materi") or "",
+           "pembahasan": q.get("explanation") or "", "gambar": q.get("image_url") or "",
+           "gambar_pembahasan": q.get("explanation_image_url") or ""}
+    if t in ("single", "multiple", "truefalse_multi"):
+        for i, o in enumerate(opts[:len(_LETTERS)]):
+            row[f"option_{_LETTERS[i]}"] = o.get("text", "")
+    idx = {o.get("id"): i for i, o in enumerate(opts)}
+    if t in ("single", "multiple"):
+        row["correct"] = ";".join(_LETTERS[idx[c]].upper() for c in correct if c in idx and idx[c] < len(_LETTERS))
+    elif t == "truefalse":
+        row["correct"] = "benar" if (correct[:1] or [""])[0] == "true" else "salah"
+    elif t == "truefalse_multi":
+        key = dict(c.split(":", 1) for c in correct if ":" in c)
+        row["correct"] = ";".join("B" if key.get(o.get("id")) == "true" else "S" for o in opts[:len(_LETTERS)])
+    else:
+        row["correct"] = "|".join(correct)
+    if t in ("truefalse", "truefalse_multi") and q.get("tf_labels"):
+        row["label_benar"], row["label_salah"] = (q["tf_labels"] + ["", ""])[:2]
+    return row
+
+
+@router.get("/question-bank/export")
+async def question_bank_export(bidang: Optional[str] = None, materi: Optional[str] = None,
+                               competency: Optional[str] = None, difficulty: Optional[str] = None,
+                               q: Optional[str] = None, user: dict = Depends(admin_only)):
+    items = await db.questions.find(_bank_query(None, bidang, materi, competency, q), {"_id": 0}).sort(
+        [("bidang", 1), ("materi", 1), ("tryout_id", 1), ("order", 1)]).to_list(20000)
+    if difficulty:
+        items = [it for it in items if irt.effective_label(it) == difficulty]
+    titles = {t["id"]: t["title"] for t in await db.tryouts.find(
+        {"id": {"$in": list({it["tryout_id"] for it in items})}}, {"_id": 0, "id": 1, "title": 1}).to_list(5000)}
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Soal"
+    headers = _TPL_HEADERS + ["sumber_tryout"]
+    ws.append(headers)
+    for it in items:
+        row = {**_question_to_row(it), "sumber_tryout": titles.get(it["tryout_id"], "")}
+        ws.append([row.get(h, "") for h in headers])
+    for col in ws.columns:
+        width = max((len(str(c.value)) if c.value is not None else 0) for c in col) + 2
+        ws.column_dimensions[col[0].column_letter].width = min(max(width, 10), 48)
+    info = wb.create_sheet("Info")
+    filt = {"bidang": bidang, "materi": materi, "kompetensi": competency, "tingkat": difficulty, "cari": q}
+    info.append(["Ekspor Bank Soal", now_iso()])
+    info.append(["Jumlah soal", len(items)])
+    for k, v in filt.items():
+        info.append([k, v or "Semua"])
+    info.append(["Catatan", "Format sama dengan template impor; berkas ini bisa langsung diimpor ke Try Out lain. Kolom sumber_tryout diabaikan saat impor."])
+    buf = io.BytesIO()
+    wb.save(buf)
+    slug = re.sub(r"[^a-z0-9]+", "_", "_".join(x for x in (bidang, materi) if x).lower()).strip("_") or "semua"
+    return Response(content=buf.getvalue(),
+                    media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f"attachment; filename=bank_soal_{slug}.xlsx"})
 
 
 @router.post("/tryouts/{tryout_id}/questions/bulk-materi")
@@ -1126,11 +1192,74 @@ def _parse_zip(data: bytes):
     return _parse_sheet(sheet, sheet_name), images
 
 
-@router.post("/tryouts/{tryout_id}/questions/import")
-async def import_questions(tryout_id: str, file: UploadFile = File(...), user: dict = Depends(admin_only)):
-    tryout = await db.tryouts.find_one({"id": tryout_id}, {"_id": 0, "subject": 1})
-    if not tryout:
-        raise HTTPException(status_code=404, detail="Try Out tidak ditemukan")
+_IMG_FIELDS = (("gambar", ("gambar", "image", "image_url"), "gambar soal"),
+               ("gambar_pembahasan", ("gambar_pembahasan", "explanation_image", "explanation_image_url"), "gambar pembahasan"))
+
+
+def _is_url(v: str) -> bool:
+    return v.startswith(("https://", "http://", "/api/"))
+
+
+def _cell(v):
+    if v is None:
+        return ""
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    return str(v).strip()
+
+
+def _normalize_rows(rows):
+    out = []
+    for r in rows:
+        n = {k: _cell(v) for k, v in r.items() if k}
+        for key, aliases, _ in _IMG_FIELDS:
+            n[key] = next((n[x] for x in aliases if n.get(x)), "")
+        out.append(n)
+    return out
+
+
+async def _upload_row_images(rows, images, user_id):
+    """Unggah gambar dari ZIP & ganti nama file dengan URL. Return {index: [peringatan]}."""
+    warns = {}
+    for i, r in enumerate(rows):
+        for key, _, label in _IMG_FIELDS:
+            v = r.get(key) or ""
+            if not v or _is_url(v):
+                continue
+            hit = images.get(v.split("/")[-1].lower())
+            if not hit:
+                continue
+            try:
+                r[key] = await save_question_image(hit[0], hit[1], user_id)
+            except Exception as e:
+                warns.setdefault(i, []).append(f"{label} {v!r} gagal diunggah ({e})")
+    return warns
+
+
+def _validate_row(row: dict, order: int = 0):
+    q, err = _row_to_question(row, order)
+    warns = []
+    for key, _, label in _IMG_FIELDS:
+        v = row.get(key) or ""
+        if v and not _is_url(v):
+            warns.append(f"{label} {v!r} tidak ditemukan (unggah ZIP berisi Excel + gambar); soal diimpor tanpa gambar itu")
+    if q:
+        q["image_url"] = row["gambar"] if _is_url(row.get("gambar") or "") else None
+        q["explanation_image_url"] = row["gambar_pembahasan"] if _is_url(row.get("gambar_pembahasan") or "") else None
+    return q, err, warns
+
+
+def _preview_payload(rows, extra_warns=None):
+    out = []
+    for i, r in enumerate(rows):
+        q, err, warns = _validate_row(r)
+        out.append({"raw": r, "ok": err is None, "error": err,
+                    "warnings": (extra_warns or {}).get(i, []) + warns,
+                    "question": q})
+    return {"rows": out, "valid": sum(1 for x in out if x["ok"]), "invalid": sum(1 for x in out if not x["ok"])}
+
+
+async def _read_upload(file: UploadFile, user_id: str):
     data = await file.read()
     fname = (file.filename or "").lower()
     images = {}
@@ -1141,39 +1270,64 @@ async def import_questions(tryout_id: str, file: UploadFile = File(...), user: d
             rows = _parse_sheet(data, fname)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Gagal membaca berkas: {e}")
+    rows = _normalize_rows(rows)
+    warns = await _upload_row_images(rows, images, user_id)
+    return rows, warns
 
+
+async def _insert_rows(tryout_id: str, rows):
+    tryout = await db.tryouts.find_one({"id": tryout_id}, {"_id": 0, "subject": 1})
+    if not tryout:
+        raise HTTPException(status_code=404, detail="Try Out tidak ditemukan")
     start = await db.questions.count_documents({"tryout_id": tryout_id})
     imported, errors = 0, []
     for idx, row in enumerate(rows):
-        q, err = _row_to_question(row, start + imported + 1)
+        q, err, warns = _validate_row(row, start + imported + 1)
         if err:
             errors.append(f"Baris {idx + 2}: {err}")
             continue
-        img = str(row.get("gambar") or row.get("image") or row.get("image_url") or "").strip()
-        q["image_url"] = None
-        if img:
-            if img.startswith(("https://", "http://", "/api/")):
-                q["image_url"] = img
-            elif img.split("/")[-1].lower() in images:
-                base, blob = images[img.split("/")[-1].lower()]
-                try:
-                    q["image_url"] = await save_question_image(base, blob, user["id"])
-                except Exception as e:
-                    errors.append(f"Baris {idx + 2}: gambar {img!r} gagal diunggah ({e}), soal tetap diimpor tanpa gambar")
-            else:
-                errors.append(f"Baris {idx + 2}: gambar {img!r} tidak ditemukan (unggah sebagai ZIP berisi Excel + gambar), soal tetap diimpor tanpa gambar")
-        q["id"] = new_id()
-        q["tryout_id"] = tryout_id
-        q["bidang"] = q.get("bidang") or _clean_text(tryout.get("subject"))
-        q.update({"irt_a": None, "irt_b": None, "irt_c": None, "irt_calibrated": False,
+        errors += [f"Baris {idx + 2}: {w}" for w in warns]
+        q.update({"id": new_id(), "tryout_id": tryout_id,
+                  "bidang": q.get("bidang") or _clean_text(tryout.get("subject")),
+                  "irt_a": None, "irt_b": None, "irt_c": None, "irt_calibrated": False,
                   "p_value": None, "point_biserial": None, "response_count": 0})
         await db.questions.insert_one(q)
         imported += 1
     return {"imported": imported, "errors": errors}
 
 
+class RowsBody(BaseModel):
+    rows: List[dict]
+
+
+@router.post("/tryouts/{tryout_id}/questions/import")
+async def import_questions(tryout_id: str, file: UploadFile = File(...), user: dict = Depends(admin_only)):
+    if not await db.tryouts.find_one({"id": tryout_id}):
+        raise HTTPException(status_code=404, detail="Try Out tidak ditemukan")
+    rows, _ = await _read_upload(file, user["id"])
+    return await _insert_rows(tryout_id, rows)
+
+
+@router.post("/questions/import/preview")
+async def import_preview(file: UploadFile = File(...), user: dict = Depends(admin_only)):
+    rows, warns = await _read_upload(file, user["id"])
+    if not rows:
+        raise HTTPException(status_code=400, detail="Berkas tidak berisi baris soal")
+    return _preview_payload(rows, warns)
+
+
+@router.post("/questions/import/validate")
+async def import_validate(body: RowsBody, user: dict = Depends(admin_only)):
+    return _preview_payload(_normalize_rows(body.rows))
+
+
+@router.post("/tryouts/{tryout_id}/questions/import-rows")
+async def import_rows(tryout_id: str, body: RowsBody, user: dict = Depends(admin_only)):
+    return await _insert_rows(tryout_id, _normalize_rows(body.rows))
+
+
 _TPL_HEADERS = ["type", "text", "option_a", "option_b", "option_c", "option_d", "option_e", "correct", "points",
-                "competency", "tingkat", "bidang", "materi", "pembahasan", "gambar", "label_benar", "label_salah"]
+                "competency", "tingkat", "bidang", "materi", "pembahasan", "gambar", "gambar_pembahasan", "label_benar", "label_salah"]
 _TPL_SAMPLES = [
     {"type": "single", "text": "Berapa hasil 2+2?", "option_a": "3", "option_b": "4", "option_c": "5", "option_d": "6",
      "correct": "B", "points": 10, "competency": "numerasi", "tingkat": "mudah", "bidang": "Matematika", "materi": "Bilangan",
@@ -1190,7 +1344,7 @@ _TPL_SAMPLES = [
      "option_b": r"$24\text{ cm}^2$", "option_c": r"$6\text{ cm}^2$", "option_d": r"$18\text{ cm}^2$", "correct": "A",
      "points": 10, "competency": "numerasi", "tingkat": "sedang", "bidang": "Matematika", "materi": "Bangun Datar",
      "pembahasan": r"Luas segitiga $= \frac{1}{2} \times alas \times tinggi = \frac{1}{2} \times 6 \times 4 = 12\text{ cm}^2$.",
-     "gambar": "segitiga.png"},
+     "gambar": "segitiga.png", "gambar_pembahasan": "pembahasan_segitiga.png"},
     {"type": "multiple", "text": "Pilih bilangan genap", "option_a": "2", "option_b": "3", "option_c": "4", "option_d": "5",
      "correct": "A;C", "points": 10, "competency": "numerasi", "tingkat": "sedang", "bidang": "Matematika", "materi": "Bilangan",
      "pembahasan": "Bilangan genap habis dibagi 2: yaitu 2 dan 4."},
@@ -1246,6 +1400,7 @@ async def questions_template_xlsx(user: dict = Depends(admin_only)):
         ["tingkat", "Tingkat kesulitan IRT: mudah | sedang | sulit"],
         ["bidang", "OPSIONAL. Bidang / mata pelajaran soal (mis. Matematika). Kosong = otomatis mata pelajaran Try Out tujuan impor."],
         ["materi", "OPSIONAL. Materi / topik soal (mis. Pecahan, Aljabar). Dipakai untuk filter Bank Soal."],
+        ["gambar_pembahasan", "OPSIONAL. Nama file gambar untuk pembahasan (mis. pembahasan_segitiga.png) di dalam ZIP yang sama, atau link https://..."],
         ["pembahasan", "OPSIONAL. Penjelasan lengkap jawaban, tampil ke siswa jika admin membuka pembahasan. Mendukung rumus $...$."],
         ["gambar", "OPSIONAL. Isi nama file gambar (mis. segitiga.png) lalu unggah ZIP berisi file Excel ini + semua gambarnya. Bisa juga diisi link https://... Kosongkan bila soal tanpa gambar."],
         [""],

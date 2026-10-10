@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Library, Loader2, BookMarked, Gauge } from "lucide-react";
+import { Library, Loader2, BookMarked, Gauge, FileDown } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -68,6 +68,22 @@ export default function QuestionBankDialog({ tryoutId, open, onOpenChange, onCop
   const items = data?.items || [];
   const allChecked = items.length > 0 && items.every((x) => picked.has(x.id));
 
+  const [exporting, setExporting] = useState(false);
+  const exportXlsx = async () => {
+    setExporting(true);
+    try {
+      const params = { q: q || undefined };
+      Object.entries(f).forEach(([k, v]) => { if (v !== ALL) params[k] = v; });
+      const res = await api.get("/admin/question-bank/export", { params, responseType: "blob" });
+      const name = (res.headers["content-disposition"] || "").match(/filename=([^;]+)/)?.[1] || "bank_soal.xlsx";
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url; a.download = name; a.click();
+      URL.revokeObjectURL(url);
+    } catch { toast.error("Gagal mengekspor bank soal"); }
+    finally { setExporting(false); }
+  };
+
   const copy = async () => {
     setBusy(true);
     try {
@@ -98,9 +114,14 @@ export default function QuestionBankDialog({ tryoutId, open, onOpenChange, onCop
             : !items.length ? <p className="py-10 text-center text-sm text-[#94A3B8]">Tidak ada soal yang cocok dengan filter.</p>
             : items.map((x) => <BankRow key={x.id} x={x} checked={picked.has(x.id)} onToggle={toggle} />)}
         </div>
-        <DialogFooter>
+        <DialogFooter className="sm:justify-between gap-2">
+          <Button variant="outline" onClick={exportXlsx} disabled={exporting} className="rounded-full" data-testid="question-bank-export">
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} Ekspor Excel (sesuai filter, semua Try Out)
+          </Button>
+          <div className="flex gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
           <Button onClick={copy} disabled={!picked.size || busy} className="bg-[#0E7490] hover:bg-[#0B5C74]" data-testid="question-bank-copy">Salin {picked.size || ""} Soal</Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
