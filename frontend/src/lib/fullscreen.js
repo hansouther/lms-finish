@@ -58,3 +58,18 @@ export function onFullscreenChange(cb) {
 export async function keepScreenOn() {
   try { return await navigator.wakeLock?.request("screen"); } catch { return null; }
 }
+
+export const isIOS = () => {
+  const ua = navigator.userAgent || "";
+  return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+};
+
+export const isInAppBrowser = () => /FBAN|FBAV|Instagram|Line\/|WhatsApp|TikTok|MicroMessenger|; wv\)/i.test(navigator.userAgent || "");
+
+export async function lockEscKey() {
+  try { await navigator.keyboard?.lock?.(["Escape", "F11"]); } catch { /* unsupported */ }
+}
+
+export function unlockKeys() {
+  try { navigator.keyboard?.unlock?.(); } catch { /* unsupported */ }
+}

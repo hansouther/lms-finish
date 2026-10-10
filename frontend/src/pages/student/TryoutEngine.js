@@ -10,9 +10,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import MathText, { QuestionImage } from "@/components/common/MathText";
-import { ExamHeader, AnswerArea, Palette, FlagButton, FullscreenGate, NoFullscreenNotice, TYPE_LABEL } from "@/components/exam/ExamParts";
+import { ExamHeader, AnswerArea, Palette, FlagButton, FullscreenGate, NoFullscreenNotice, PseudoFullscreenGate, TYPE_LABEL } from "@/components/exam/ExamParts";
 import { toast } from "sonner";
 import useTabGuard from "@/hooks/useTabGuard";
+import useExamLockdown from "@/hooks/useExamLockdown";
+import { isIOS, isInAppBrowser } from "@/lib/fullscreen";
 import { stopAlarm } from "@/lib/alarm";
 import { enterFullscreen, exitFullscreen, fsElement, fsSupported, isStandalone, onFullscreenChange, keepScreenOn } from "@/lib/fullscreen";
 
@@ -38,6 +40,7 @@ export default function TryoutEngine() {
   const [isFs, setIsFs] = useState(!!fsElement());
   const [fsBusy, setFsBusy] = useState(false);
   const [fsFailed, setFsFailed] = useState(false);
+  const [pseudoReady, setPseudoReady] = useState(false);
   const answersRef = useRef({});
   answersRef.current = answers;
   const scrollRef = useRef(null);
@@ -160,6 +163,8 @@ export default function TryoutEngine() {
     }
     setWarnOpen(true);
   }, { ignoreRef: submittedRef, watchFullscreen: needFs });
+  useExamLockdown(!!attemptId && MAX_VIOLATIONS > 0);
+  const startPseudo = () => { setPseudoReady(true); window.scrollTo(0, 0); };
 
   const goFullscreen = async () => {
     setFsBusy(true);
@@ -248,6 +253,7 @@ export default function TryoutEngine() {
         </SheetContent>
       </Sheet>
 
+      {MAX_VIOLATIONS > 0 && !needFs && !pseudoReady && !warnOpen && !submitting && <PseudoFullscreenGate max={MAX_VIOLATIONS} ios={isIOS()} inApp={isInAppBrowser()} onStart={startPseudo} />}
       {needFs && !isFs && !warnOpen && !submitting && <FullscreenGate max={MAX_VIOLATIONS} onEnter={goFullscreen} busy={fsBusy} />}
 
       <AlertDialog open={warnOpen}>

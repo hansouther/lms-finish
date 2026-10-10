@@ -145,3 +145,24 @@ export function NoFullscreenNotice() {
     </div>
   );
 }
+
+export function PseudoFullscreenGate({ max, ios, inApp, onStart }) {
+  return (
+    <div className="fixed inset-0 z-[60] bg-[#0A1128]/95 backdrop-blur-sm flex items-center justify-center p-5 overflow-y-auto" data-testid="pseudo-fullscreen-gate">
+      <div className="max-w-md w-full rounded-2xl bg-white p-6 text-center">
+        <div className="mx-auto h-14 w-14 rounded-full bg-[#E6F5F8] flex items-center justify-center"><Smartphone className="h-7 w-7 text-[#0E7490]" /></div>
+        <h2 className="mt-4 text-lg font-bold text-[#0A1128]">Mode Ujian (Layar Terkunci)</h2>
+        <p className="mt-2 text-sm text-[#475569]">
+          {ios ? "iPhone/Safari tidak mendukung layar penuh untuk halaman web." : inApp ? "Browser di dalam aplikasi ini tidak mendukung layar penuh." : "Browser ini tidak mendukung layar penuh."} Ujian tetap berjalan dalam mode layar terkunci. Berpindah tab/aplikasi, menutup layar, atau membuka notifikasi akan dihitung pelanggaran{max ? ` (maks ${max} kali, lalu otomatis dikumpulkan)` : ""}.
+        </p>
+        <div className="mt-3 rounded-md bg-[#FEF3C7] text-[#92400E] text-xs px-3 py-2 text-left" data-testid="pseudo-fullscreen-recommend">
+          Disarankan memakai <b>Google Chrome</b> di <b>Android</b> atau <b>laptop/PC</b> agar mode layar penuh aktif sepenuhnya.
+          {ios ? " Di iPhone: aktifkan mode Jangan Ganggu agar notifikasi tidak mengganggu." : ""}
+        </div>
+        <Button onClick={onStart} className="mt-5 w-full h-12 rounded-md bg-[#0E7490] hover:bg-[#0B5C74] text-base" data-testid="pseudo-fullscreen-start">
+          <Maximize className="h-5 w-5" /> Saya Mengerti, Mulai Ujian
+        </Button>
+      </div>
+    </div>
+  );
+}
