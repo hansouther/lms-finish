@@ -6,6 +6,7 @@ import PublicShell from "@/components/public/PublicShell";
 import useSeo, { DEFAULT_OG_IMAGE } from "@/hooks/useSeo";
 import { Loading, Empty } from "@/components/common/States";
 import { formatDate } from "@/lib/format";
+import { SiteLogoMark, SiteName } from "@/components/common/SiteBrand";
 
 export default function NewsDetail() {
   const { id } = useParams();
@@ -81,7 +82,7 @@ export default function NewsDetail() {
           )}
 
           <div className="mt-12 rounded-2xl bg-[#0A1128] text-white p-8 text-center">
-            <h3 className="text-xl font-bold">Ingin ikut belajar di Binara LMS?</h3>
+            <h3 className="text-xl font-bold">Ingin ikut belajar di <SiteName />?</h3>
             <p className="mt-2 text-white/70 text-sm">Daftar gratis dan akses Try Out, kursus interaktif, serta pemantauan progres belajar.</p>
             <Link to="/register" className="inline-flex items-center gap-2 mt-5 rounded-full bg-[#C9A227] hover:bg-[#A9871C] text-[#0A1128] font-semibold px-6 py-3 transition-colors duration-200" data-testid="news-detail-cta">
               Daftar Sekarang

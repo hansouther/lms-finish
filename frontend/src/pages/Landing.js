@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  GraduationCap, ArrowRight, PlayCircle, Users, BookOpen, ClipboardCheck,
+  ArrowRight, PlayCircle, Users, BookOpen, ClipboardCheck,
   MonitorPlay, ShieldCheck, CalendarDays, Newspaper, Sparkles, LineChart,
   UserCheck, Building2, CheckCircle2, Menu,
 } from "lucide-react";
@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import MonthCalendar from "@/components/public/MonthCalendar";
 import useSeo from "@/hooks/useSeo";
 import { toast } from "sonner";
+import { SiteLogoMark, SiteName } from "@/components/common/SiteBrand";
+import { useSite, assetUrl } from "@/lib/site";
 
 const HERO = "https://images.unsplash.com/photo-1543269865-cbf427effbad?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzZ8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBzdHVkZW50cyUyMGxlYXJuaW5nfGVufDB8fHx8MTc4NzE1MDU5OHww&ixlib=rb-4.1.0&q=85";
 
@@ -43,10 +45,8 @@ function Header() {
     <header className={`fixed top-0 inset-x-0 z-50 transition-colors duration-200 ${scrolled ? "bg-white/70 backdrop-blur-xl border-b border-[#E2E8F0]" : "bg-transparent"}`}>
       <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
         <a href="#top" className="flex items-center gap-2.5" data-testid="landing-logo">
-          <div className="h-9 w-9 rounded-xl bg-[#0E7490] flex items-center justify-center shadow-md shadow-[#0E7490]/30">
-            <GraduationCap className="h-5 w-5 text-white" />
-          </div>
-          <span className="font-head font-bold text-[#0A1128] text-lg">Binara LMS</span>
+          <SiteLogoMark className="h-9 w-9 rounded-xl bg-[#0E7490] shadow-md shadow-[#0E7490]/30" iconClass="h-5 w-5 text-white" />
+          <span className="font-head font-bold text-[#0A1128] text-lg"><SiteName /></span>
         </a>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#475569]">
           <a href="#cara" className="hover:text-[#0E7490] transition-colors duration-200">Cara Kerja</a>
@@ -132,6 +132,7 @@ function PartnershipForm() {
 }
 
 export default function Landing() {
+  const site = useSite();
   const [news, setNews] = useState([]);
   const [calendar, setCalendar] = useState([]);
   const [serverNow, setServerNow] = useState(null);
@@ -165,7 +166,7 @@ export default function Landing() {
               Satu ekosistem untuk <span className="text-[#0E7490]">belajar</span>, mengajar & <span className="text-[#C9A227]">memantau</span> prestasi.
             </h1>
             <p className="mt-6 text-base sm:text-lg text-[#475569] max-w-xl">
-              Binara LMS menghubungkan Admin, Siswa, Tentor, dan Proktor sekolah mitra dalam satu alur data yang mulus — dari bank soal hingga analitik nilai.
+              <SiteName /> menghubungkan Admin, Siswa, Tentor, dan Proktor sekolah mitra dalam satu alur data yang mulus — dari bank soal hingga analitik nilai.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button onClick={() => navigate("/register")} className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74] h-12 px-7 text-base" data-testid="hero-cta-primary">
@@ -188,7 +189,7 @@ export default function Landing() {
           </motion.div>
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.15 }} className="relative">
             <div className="absolute -inset-4 bg-gradient-to-tr from-[#0E7490]/20 to-[#C9A227]/20 rounded-[2rem] blur-2xl" />
-            <img src={HERO} alt="Siswa belajar" className="relative rounded-[1.5rem] w-full h-[440px] object-cover border border-white shadow-2xl" />
+            <img src={assetUrl(site.hero_image_url) || HERO} alt={site.site_name} className="relative rounded-[1.5rem] w-full h-[440px] object-cover border border-white shadow-2xl" />
           </motion.div>
         </div>
       </section>
@@ -197,7 +198,7 @@ export default function Landing() {
       <section id="cara" className="py-20 bg-[#EFF6F8]">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <div className="max-w-2xl">
-            <h2 className="text-3xl sm:text-4xl font-bold">Cara menggunakan Binara LMS</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold">Cara menggunakan <SiteName /></h2>
             <p className="mt-3 text-[#475569]">Empat langkah sederhana untuk mulai dari pendaftaran hingga pemantauan prestasi.</p>
           </div>
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -297,10 +298,10 @@ export default function Landing() {
       <footer className="bg-[#0A1128] text-white py-12">
         <div className="max-w-7xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-[#0E7490] flex items-center justify-center"><GraduationCap className="h-4 w-4 text-white" /></div>
-            <span className="font-head font-bold">Binara LMS</span>
+            <SiteLogoMark className="h-8 w-8 rounded-lg bg-[#0E7490]" iconClass="h-4 w-4 text-white" />
+            <span className="font-head font-bold"><SiteName /></span>
           </div>
-          <p className="text-sm text-white/60">© 2026 Binara LMS. Learning Management System berbasis RBAC.</p>
+          <p className="text-sm text-white/60">© {new Date().getFullYear()} <SiteName />. {site.footer_text || "Learning Management System berbasis RBAC."}</p>
           <div className="flex gap-3">
             <Link to="/login"><Button variant="outline" className="rounded-full border-white/20 bg-transparent text-white hover:bg-white hover:text-[#0A1128]" data-testid="footer-login-btn">Masuk Portal</Button></Link>
           </div>

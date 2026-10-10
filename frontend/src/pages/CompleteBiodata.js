@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { GraduationCap, Loader2, ArrowRight, LogOut, ShieldCheck } from "lucide-react";
+import { Loader2, ArrowRight, LogOut, ShieldCheck } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { useAuth, roleHome, needsBiodata } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import FullScreenLoader from "@/components/FullScreenLoader";
 import { toast } from "sonner";
+import { SiteLogoMark, SiteName } from "@/components/common/SiteBrand";
 
 export default function CompleteBiodata() {
   const { user, setUser, logout } = useAuth();
@@ -52,8 +53,8 @@ export default function CompleteBiodata() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-[#EFF6F8]" data-testid="complete-biodata">
       <div className="w-full max-w-md">
         <Link to="/" className="flex items-center gap-2.5 mb-8 justify-center">
-          <div className="h-10 w-10 rounded-xl bg-[#0E7490] flex items-center justify-center"><GraduationCap className="h-5 w-5 text-white" /></div>
-          <span className="font-head font-bold text-xl text-[#0A1128]">SKENA PENDIDIKAN BERPRESTASI</span>
+          <SiteLogoMark className="h-10 w-10 rounded-xl bg-[#0E7490]" iconClass="h-5 w-5 text-white" />
+          <span className="font-head font-bold text-xl text-[#0A1128]"><SiteName /></span>
         </Link>
         <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8">
           <h1 className="text-2xl font-bold text-[#0A1128]">Lengkapi Biodata Siswa</h1>

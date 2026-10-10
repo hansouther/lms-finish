@@ -6,8 +6,10 @@ import "katex/dist/katex.min.css";
 import "@/index.css";
 import App from "@/App";
 import { initPwa } from "@/lib/pwa";
+import { loadSite, hideBootLoader } from "@/lib/site";
 
 initPwa();
+hideBootLoader(loadSite());
 
 const queryClient = new QueryClient({
   defaultOptions: {

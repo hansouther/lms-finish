@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { NavLink, Link, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Newspaper, CalendarDays, BookOpen, CalendarClock, FileText,
-  Radio, Handshake, Users, GraduationCap, LogOut, Menu, X, ClipboardList,
+  Radio, Handshake, Users, LogOut, Menu, X, ClipboardList,
   Gavel, CalendarCheck, School, BarChart3, MonitorPlay, Download, Library, Bell, UserCog, ClipboardCheck, Target, FileBarChart2, Wallet,
 } from "lucide-react";
 import { useAuth, roleLabel } from "@/context/AuthContext";
@@ -10,6 +10,7 @@ import api from "@/lib/api";
 import { SheetTitle, SheetDescription } from "@/components/ui/sheet"; 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SiteLogoMark, SiteName } from "@/components/common/SiteBrand";
 
 const NAV = {
   admin: [
@@ -81,11 +82,9 @@ function SidebarContent({ items, onNavigate }) {
 function Brand() {
   return (
     <div className="flex items-center gap-2.5 px-5 h-16 border-b border-[#E2E8F0]">
-      <div className="h-9 w-9 rounded-xl bg-[#0E7490] flex items-center justify-center shadow-md shadow-[#0E7490]/30">
-        <GraduationCap className="h-5 w-5 text-white" />
-      </div>
+      <SiteLogoMark className="h-9 w-9 rounded-xl bg-[#0E7490] shadow-md shadow-[#0E7490]/30" iconClass="h-5 w-5 text-white" />
       <div className="leading-tight">
-        <p className="font-head font-bold text-[#0A1128] text-[15px]">Binara LMS</p>
+        <p className="font-head font-bold text-[#0A1128] text-[15px]"><SiteName /></p>
         <p className="text-[10px] uppercase tracking-widest text-[#94A3B8]">Learning System</p>
       </div>
     </div>

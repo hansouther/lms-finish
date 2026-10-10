@@ -6,6 +6,7 @@ import PublicShell from "@/components/public/PublicShell";
 import useSeo from "@/hooks/useSeo";
 import { Loading, Empty } from "@/components/common/States";
 import { formatDate } from "@/lib/format";
+import { SiteLogoMark, SiteName } from "@/components/common/SiteBrand";
 
 export default function NewsPage() {
   const [news, setNews] = useState([]);
@@ -27,7 +28,7 @@ export default function NewsPage() {
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 text-white px-4 py-1.5 text-xs font-semibold">
             <Newspaper className="h-3.5 w-3.5 text-[#C9A227]" /> Berita & Pengumuman
           </span>
-          <h1 className="mt-5 text-4xl sm:text-5xl font-extrabold leading-tight">Kabar Terbaru Binara LMS</h1>
+          <h1 className="mt-5 text-4xl sm:text-5xl font-extrabold leading-tight">Kabar Terbaru <SiteName /></h1>
           <p className="mt-4 text-white/70 max-w-2xl">Semua pengumuman, informasi program, dan berita terbaru. Klik judul untuk membaca selengkapnya.</p>
         </div>
       </section>

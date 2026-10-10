@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SiteLogoMark, SiteName } from "@/components/common/SiteBrand";
 
 export function PublicHeader() {
   const [scrolled, setScrolled] = useState(false);
@@ -14,10 +14,8 @@ export function PublicHeader() {
     <header className={`fixed top-0 inset-x-0 z-50 transition-colors duration-200 ${scrolled ? "bg-white/80 backdrop-blur-xl border-b border-[#E2E8F0]" : "bg-white/70 backdrop-blur-xl border-b border-[#E2E8F0]"}`}>
       <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5" data-testid="public-logo">
-          <div className="h-9 w-9 rounded-xl bg-[#0E7490] flex items-center justify-center shadow-md shadow-[#0E7490]/30">
-            <GraduationCap className="h-5 w-5 text-white" />
-          </div>
-          <span className="font-head font-bold text-[#0A1128] text-lg">Binara LMS</span>
+          <SiteLogoMark className="h-9 w-9 rounded-xl bg-[#0E7490] shadow-md shadow-[#0E7490]/30" iconClass="h-5 w-5 text-white" />
+          <span className="font-head font-bold text-[#0A1128] text-lg"><SiteName /></span>
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#475569]">
           <Link to="/" className="hover:text-[#0E7490] transition-colors duration-200">Beranda</Link>
@@ -39,8 +37,8 @@ export function PublicFooter() {
     <footer className="bg-[#0A1128] text-white py-12">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-[#0E7490] flex items-center justify-center"><GraduationCap className="h-4 w-4 text-white" /></div>
-          <span className="font-head font-bold">Binara LMS</span>
+          <SiteLogoMark className="h-8 w-8 rounded-lg bg-[#0E7490]" iconClass="h-4 w-4 text-white" />
+          <span className="font-head font-bold"><SiteName /></span>
         </div>
         <div className="flex gap-6 text-sm text-white/70">
           <Link to="/kursus" className="hover:text-white transition-colors duration-200">Kursus</Link>
@@ -48,7 +46,7 @@ export function PublicFooter() {
           <Link to="/berita" className="hover:text-white transition-colors duration-200">Berita</Link>
           <Link to="/login" className="hover:text-white transition-colors duration-200">Masuk Portal</Link>
         </div>
-        <p className="text-sm text-white/60">© 2026 Binara LMS.</p>
+        <p className="text-sm text-white/60">© {new Date().getFullYear()} <SiteName />.</p>
       </div>
     </footer>
   );

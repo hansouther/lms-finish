@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Clock, XCircle, LogOut, RefreshCw, GraduationCap } from "lucide-react";
+import { Clock, XCircle, LogOut, RefreshCw } from "lucide-react";
 import { useAuth, roleHome, roleLabel } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import FullScreenLoader from "@/components/FullScreenLoader";
+import { SiteLogoMark, SiteName } from "@/components/common/SiteBrand";
 
 export default function PendingVerification() {
   const { user, logout, checkAuth } = useAuth();
@@ -24,8 +25,8 @@ export default function PendingVerification() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-[#EFF6F8]" data-testid="pending-verification">
       <div className="w-full max-w-lg">
         <Link to="/" className="flex items-center gap-2.5 mb-8 justify-center">
-          <div className="h-10 w-10 rounded-xl bg-[#0E7490] flex items-center justify-center"><GraduationCap className="h-5 w-5 text-white" /></div>
-          <span className="font-head font-bold text-xl text-[#0A1128]">Binara LMS</span>
+          <SiteLogoMark className="h-10 w-10 rounded-xl bg-[#0E7490]" iconClass="h-5 w-5 text-white" />
+          <span className="font-head font-bold text-xl text-[#0A1128]"><SiteName /></span>
         </Link>
         <div className="bg-white rounded-2xl border border-[#E2E8F0] p-8 text-center">
           <div className={`mx-auto h-16 w-16 rounded-2xl flex items-center justify-center ${rejected ? "bg-[#FEE2E2] text-[#B91C1C]" : "bg-[#FEF3C7] text-[#B45309]"}`}>

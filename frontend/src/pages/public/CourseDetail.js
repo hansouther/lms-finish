@@ -6,6 +6,7 @@ import PublicShell from "@/components/public/PublicShell";
 import useSeo from "@/hooks/useSeo";
 import { Loading, Empty } from "@/components/common/States";
 import { formatRupiah } from "@/lib/format";
+import { SiteLogoMark, SiteName } from "@/components/common/SiteBrand";
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -97,7 +98,7 @@ export default function CourseDetail() {
                   {data.tutors.length === 0 ? (
                     <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 flex items-center gap-3">
                       <div className="h-11 w-11 rounded-full bg-[#ECFDF5] text-[#10B981] flex items-center justify-center"><UserCheck className="h-5 w-5" /></div>
-                      <div><p className="font-semibold text-[#0A1128] text-sm">Tim Pengajar Binara LMS</p><p className="text-xs text-[#94A3B8]">Tentor berpengalaman bersertifikat</p></div>
+                      <div><p className="font-semibold text-[#0A1128] text-sm">Tim Pengajar <SiteName /></p><p className="text-xs text-[#94A3B8]">Tentor berpengalaman bersertifikat</p></div>
                     </div>
                   ) : data.tutors.map((t, i) => (
                     <div key={i} className="bg-white rounded-2xl border border-[#E2E8F0] p-5 flex items-center gap-3" data-testid={`tutor-${i}`}>

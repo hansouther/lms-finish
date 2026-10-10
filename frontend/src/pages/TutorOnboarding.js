@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, FileText, Award, Loader2, Upload, Trash2, CheckCircle2, ArrowRight } from "lucide-react";
+import { FileText, Award, Loader2, Upload, Trash2, CheckCircle2, ArrowRight } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import FullScreenLoader from "@/components/FullScreenLoader";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fileUrl } from "@/lib/media";
 import { toast } from "sonner";
+import { SiteLogoMark, SiteName } from "@/components/common/SiteBrand";
 
 export default function TutorOnboarding() {
   const { user, setUser } = useAuth();
@@ -66,8 +67,8 @@ export default function TutorOnboarding() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-[#EFF6F8]" data-testid="tutor-onboarding">
       <div className="w-full max-w-xl">
         <div className="flex items-center gap-2.5 mb-6 justify-center">
-          <div className="h-10 w-10 rounded-xl bg-[#C9A227] flex items-center justify-center"><GraduationCap className="h-5 w-5 text-white" /></div>
-          <span className="font-head font-bold text-xl text-[#0A1128]">Binara LMS</span>
+          <SiteLogoMark className="h-10 w-10 rounded-xl bg-[#C9A227]" iconClass="h-5 w-5 text-white" />
+          <span className="font-head font-bold text-xl text-[#0A1128]"><SiteName /></span>
         </div>
         <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8">
           <h1 className="text-2xl font-bold text-[#0A1128]">Lengkapi Berkas Tentor</h1>

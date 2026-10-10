@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { isIOS, isStandalone } from "@/lib/fullscreen";
 import { canPromptInstall, onInstallAvailable, promptInstall } from "@/lib/pwa";
+import { SiteLogoMark, SiteName } from "@/components/common/SiteBrand";
 
 const KEY = "install_banner_hidden";
 
@@ -24,7 +25,7 @@ export default function InstallAppBanner() {
       <div className="mb-6 rounded-2xl border border-[#BEE3EC] bg-[#E6F5F8] p-4 flex items-start sm:items-center gap-3 flex-col sm:flex-row" data-testid="install-app-banner">
         <div className="h-10 w-10 shrink-0 rounded-full bg-[#0E7490] flex items-center justify-center"><Smartphone className="h-5 w-5 text-white" /></div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-[#0A1128] text-sm">Pasang Binara sebagai Aplikasi</p>
+          <p className="font-semibold text-[#0A1128] text-sm">Pasang <SiteName /> sebagai Aplikasi</p>
           <p className="text-xs text-[#475569] mt-0.5">Try Out tampil penuh tanpa bilah browser, seperti aplikasi CBT{ios ? " (direkomendasikan untuk iPhone/iPad)" : ""}.</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
@@ -41,7 +42,7 @@ function IosInstallDialog({ open, onOpenChange }) {
   const steps = [
     { icon: Share, text: <>Buka di <b>Safari</b>, lalu ketuk tombol <b>Bagikan</b> di bilah bawah/atas.</> },
     { icon: PlusSquare, text: <>Gulir dan pilih <b>Tambahkan ke Layar Utama</b> (Add to Home Screen).</> },
-    { icon: Smartphone, text: <>Ketuk <b>Tambah</b>, lalu buka <b>Binara</b> dari ikon di layar utama untuk mengerjakan Try Out.</> },
+    { icon: Smartphone, text: <>Ketuk <b>Tambah</b>, lalu buka <b><SiteName /></b> dari ikon di layar utama untuk mengerjakan Try Out.</> },
   ];
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GraduationCap, ArrowRight, Loader2, BadgeCheck } from "lucide-react";
+import { ArrowRight, Loader2, BadgeCheck } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import api, { apiError } from "@/lib/api";
 import { useAuth, roleHome } from "@/context/AuthContext";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { SiteLogoMark, SiteName } from "@/components/common/SiteBrand";
 
 export default function RegisterTutor() {
   const { user, setUser } = useAuth();
@@ -72,8 +73,8 @@ export default function RegisterTutor() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-[#EFF6F8]">
       <div className="w-full max-w-md">
         <Link to="/" className="flex items-center gap-2.5 mb-8 justify-center">
-          <div className="h-10 w-10 rounded-xl bg-[#C9A227] flex items-center justify-center"><GraduationCap className="h-5 w-5 text-white" /></div>
-          <span className="font-head font-bold text-xl text-[#0A1128]">SKENA PENDIDIKAN BERPRESTASI</span>
+          <SiteLogoMark className="h-10 w-10 rounded-xl bg-[#C9A227]" iconClass="h-5 w-5 text-white" />
+          <span className="font-head font-bold text-xl text-[#0A1128]"><SiteName /></span>
         </Link>
         <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8">
           <span className="inline-flex items-center gap-2 rounded-full bg-[#FBF3DC] text-[#C9A227] px-3 py-1 text-xs font-semibold"><BadgeCheck className="h-3.5 w-3.5" /> Portal Tentor / Pengajar</span>
