@@ -73,3 +73,9 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - loader_mode: custom | media; loader_media_url (GIF/PNG/WEBP ≤5MB, MP4/WEBM ≤15MB ke R2); loader_media_fit: contain | cover
 - Boot loader index.html: media mode render img/video (autoplay muted loop playsinline) + pesan; pratinjau admin ikut mendukung
 - Teruji: iteration_35 (100%)
+
+## Update Jun 2026 — Paket untuk repo LMS-test1 (tanpa commit ke GitHub user)
+- Cek LMS-test1: belum punya fitur pengaturan website sama sekali
+- Paket: /app/frontend/public/downloads/fitur-pengaturan-website.zip (PANDUAN.md, file baru, potongan index.html, patch A=tambahan murni, B=opsional tampilan logo/nama/foto)
+- Diuji pada salinan LMS-test1: build CI=true sukses, backend + unggah R2 sukses
+- Sumber kerja: /root/work (build.py)

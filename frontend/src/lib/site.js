@@ -42,7 +42,8 @@ function applyHead(s) {
 
 function setSite(next) {
   site = { ...DEFAULT_SITE, ...next };
-  const resolved = { ...site, logo_url: assetUrl(site.logo_url), favicon_url: assetUrl(site.favicon_url), loader_logo_url: assetUrl(site.loader_logo_url), loader_media_url: assetUrl(site.loader_media_url) };
+  const resolved = { ...site, logo_url: assetUrl(site.logo_url), favicon_url: assetUrl(site.favicon_url), loader_logo_url: assetUrl(site.loader_logo_url) };
+  resolved.loader_media_url = assetUrl(site.loader_media_url);
   try { localStorage.setItem(SITE_CACHE_KEY, JSON.stringify(resolved)); } catch { /* storage unavailable */ }
   applyHead(site);
   listeners.forEach((cb) => cb());

@@ -3,8 +3,9 @@ import { NavLink, Link, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Newspaper, CalendarDays, BookOpen, CalendarClock, FileText,
   Radio, Handshake, Users, LogOut, Menu, X, ClipboardList,
-  Gavel, CalendarCheck, School, BarChart3, MonitorPlay, Download, Library, Bell, UserCog, ClipboardCheck, Target, FileBarChart2, Wallet, Settings2,
+  Gavel, CalendarCheck, School, BarChart3, MonitorPlay, Download, Library, Bell, UserCog, ClipboardCheck, Target, FileBarChart2, Wallet,
 } from "lucide-react";
+import { Settings2 } from "lucide-react";
 import { useAuth, roleLabel } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { SheetTitle, SheetDescription } from "@/components/ui/sheet"; 

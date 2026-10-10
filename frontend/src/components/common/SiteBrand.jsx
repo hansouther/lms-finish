@@ -12,3 +12,9 @@ export function SiteLogoMark({ className = "", iconClass = "h-5 w-5 text-white" 
 export function SiteName() {
   return <>{useSite().site_name}</>;
 }
+
+export function SiteLogoIcon({ children }) {
+  const { logo_url, site_name } = useSite();
+  if (logo_url) return <img src={assetUrl(logo_url)} alt={site_name} className="h-full w-full object-contain rounded-[inherit] bg-white" data-testid="site-logo-img" />;
+  return children;
+}
