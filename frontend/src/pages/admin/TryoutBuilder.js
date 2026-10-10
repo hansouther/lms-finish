@@ -8,6 +8,9 @@ import ConfirmButton from "@/components/common/ConfirmButton";
 import IrtBlueprintPanel from "@/components/common/IrtBlueprintPanel";
 import IrtScaleCard from "@/components/common/IrtScaleCard";
 import MathText, { QuestionImage } from "@/components/common/MathText";
+import TfMultiEditor, { TfLabelsEditor } from "@/components/common/TfMultiEditor";
+import { TfMultiAnswer } from "@/components/common/TfMulti";
+import { tfLabels, parseTfMap } from "@/lib/tf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +25,7 @@ const TYPES = [
   { v: "single", l: "Pilihan Ganda" },
   { v: "multiple", l: "Pilihan Ganda Kompleks" },
   { v: "truefalse", l: "Benar / Salah" },
+  { v: "truefalse_multi", l: "Benar / Salah Majemuk (1 teks, banyak pernyataan)" },
   { v: "essay", l: "Esai (jawaban teks)" },
 ];
 const COMPETENCIES = [
@@ -40,7 +44,7 @@ const DIFF_LABEL = { mudah: "Mudah", sedang: "Sedang", sulit: "Sulit" };
 const DIFF_COLOR = { mudah: "#10B981", sedang: "#C9A227", sulit: "#EF4444" };
 const effDiff = (q) => (q.irt_calibrated && q.irt_b != null) ? (q.irt_b < -0.5 ? "mudah" : q.irt_b > 0.5 ? "sulit" : "sedang") : (q.difficulty_label || "sedang");
 const newOpts = () => [{ id: "o1", text: "" }, { id: "o2", text: "" }, { id: "o3", text: "" }, { id: "o4", text: "" }];
-const EMPTY = { type: "single", text: "", points: 20, options: newOpts(), correct: [], essay: "", competency: "umum", difficulty: "sedang", image_url: null };
+const EMPTY = { type: "single", text: "", points: 20, options: newOpts(), correct: [], essay: "", competency: "umum", difficulty: "sedang", image_url: null, tf_labels: ["Benar", "Salah"], tfKey: {} };
 
 export default function TryoutBuilder() {
   const { id } = useParams();
@@ -134,6 +138,8 @@ export default function TryoutBuilder() {
       competency: q.competency || "umum",
       difficulty: q.difficulty_label || "sedang",
       image_url: q.image_url || null,
+      tf_labels: tfLabels(q),
+      tfKey: q.type === "truefalse_multi" ? parseTfMap(q.correct_answers) : {},
     });
     setEditId(q.id); setOpen(true);
   };
@@ -154,11 +160,16 @@ export default function TryoutBuilder() {
     } else if (form.type === "truefalse") {
       if (!form.correct[0]) return toast.error("Pilih kunci Benar/Salah");
       correct_answers = [form.correct[0]];
+    } else if (form.type === "truefalse_multi") {
+      options = form.options.filter((o) => o.text.trim());
+      if (options.length < 2) return toast.error("Minimal 2 pernyataan");
+      if (options.some((o) => !form.tfKey[o.id])) return toast.error("Tentukan kunci untuk setiap pernyataan");
+      correct_answers = options.map((o) => `${o.id}:${form.tfKey[o.id]}`);
     } else {
       correct_answers = form.essay.split(",").map((s) => s.trim()).filter(Boolean);
       if (!correct_answers.length) return toast.error("Isi kunci jawaban esai");
     }
-    const payload = { type: form.type, text: form.text, options, correct_answers, points: parseInt(form.points || 1, 10), order: 0, competency: form.competency || "umum", difficulty_label: form.difficulty || "sedang", image_url: form.image_url || null };
+    const payload = { type: form.type, text: form.text, options, correct_answers, points: parseInt(form.points || 1, 10), order: 0, competency: form.competency || "umum", difficulty_label: form.difficulty || "sedang", image_url: form.image_url || null, tf_labels: form.type.startsWith("truefalse") ? form.tf_labels.map((l, i) => l.trim() || ["Benar", "Salah"][i]) : null };
     try {
       if (editId) await api.put(`/admin/questions/${editId}`, payload);
       else await api.post(`/admin/tryouts/${id}/questions`, payload);
@@ -257,7 +268,17 @@ export default function TryoutBuilder() {
                     {q.type === "essay" ? (
                       <p className="text-sm text-[#10B981]">Kunci: {q.correct_answers.join(" / ")}</p>
                     ) : q.type === "truefalse" ? (
-                      <p className="text-sm text-[#10B981]">Kunci: {q.correct_answers[0] === "true" ? "Benar" : "Salah"}</p>
+                      <p className="text-sm text-[#10B981]">Kunci: {tfLabels(q)[q.correct_answers[0] === "true" ? 0 : 1]}</p>
+                    ) : q.type === "truefalse_multi" ? (
+                      q.options.map((o, i) => {
+                        const k = parseTfMap(q.correct_answers)[o.id];
+                        return (
+                          <div key={o.id} className="text-sm flex items-center gap-2 text-[#475569]" data-testid={`question-stmt-${q.id}-${o.id}`}>
+                            <span className="font-mono2 text-xs text-[#94A3B8] w-4">{i + 1}.</span> <MathText text={o.text} />
+                            <span className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${k === "true" ? "bg-[#ECFDF5] text-[#10B981]" : "bg-red-50 text-[#EF4444]"}`}>{tfLabels(q)[k === "true" ? 0 : 1]}</span>
+                          </div>
+                        );
+                      })
                     ) : (
                       q.options.map((o) => (
                         <div key={o.id} className={`text-sm flex items-center gap-2 ${q.correct_answers.includes(o.id) ? "text-[#10B981] font-medium" : "text-[#475569]"}`}>
@@ -354,11 +375,21 @@ export default function TryoutBuilder() {
               </div>
             )}
 
+            {form.type.startsWith("truefalse") && (
+              <TfLabelsEditor labels={form.tf_labels} onChange={(l) => setForm((f) => ({ ...f, tf_labels: l }))} />
+            )}
+
+            {form.type === "truefalse_multi" && (
+              <TfMultiEditor statements={form.options} keyMap={form.tfKey} labels={form.tf_labels}
+                onStatements={(opts) => setForm((f) => ({ ...f, options: opts }))}
+                onKey={(sid, v) => setForm((f) => ({ ...f, tfKey: { ...f.tfKey, [sid]: v } }))} />
+            )}
+
             {form.type === "truefalse" && (
               <div>
                 <Label>Kunci Jawaban</Label>
                 <RadioGroup value={form.correct[0] || ""} onValueChange={(v) => setForm((f) => ({ ...f, correct: [v] }))} className="mt-2 flex gap-4">
-                  {[["true", "Benar"], ["false", "Salah"]].map(([v, l]) => (
+                  {[["true", form.tf_labels[0] || "Benar"], ["false", form.tf_labels[1] || "Salah"]].map(([v, l]) => (
                     <label key={v} className="flex items-center gap-2 cursor-pointer" data-testid={`tf-${v}`}><RadioGroupItem value={v} /> {l}</label>
                   ))}
                 </RadioGroup>
@@ -378,6 +409,9 @@ export default function TryoutBuilder() {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#94A3B8] mb-2">Pratinjau tampilan siswa</p>
                 <MathText as="div" text={form.text} className="block text-[#0A1128]" />
                 <QuestionImage src={form.image_url} className="mt-3 max-h-48" />
+                {form.type === "truefalse_multi" && (
+                  <div className="mt-3"><TfMultiAnswer q={{ options: form.options.filter((o) => o.text.trim()), tf_labels: form.tf_labels }} value={[]} onChange={() => {}} /></div>
+                )}
                 {(form.type === "single" || form.type === "multiple") && (
                   <div className="mt-3 space-y-1.5">
                     {form.options.filter((o) => o.text.trim()).map((o) => (

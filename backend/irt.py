@@ -75,6 +75,8 @@ def guessing_for(qtype, n_options):
         return round(min(1.0 / n, 0.35), 3)
     if qtype == "truefalse":
         return 0.5
+    if qtype == "truefalse_multi":
+        return round(0.5 ** max(int(n_options or 1), 1), 3)
     return 0.0  # essay
 
 

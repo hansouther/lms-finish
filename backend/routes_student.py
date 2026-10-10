@@ -323,7 +323,7 @@ async def tryout_detail(tryout_id: str, user: dict = Depends(student_only)):
     if t.get("kind") == "exercise":
         random.shuffle(questions)
         for q in questions:
-            if q.get("options"):
+            if q.get("options") and q.get("type") != "truefalse_multi":
                 random.shuffle(q["options"])
     t["questions"] = [strip_answers(q) for q in questions]
     return t
@@ -430,5 +430,6 @@ async def attempt_detail(attempt_id: str, user: dict = Depends(student_only)):
             pq["text"] = q["text"]
             pq["image_url"] = q.get("image_url")
             pq["options"] = q.get("options", [])
+            pq["tf_labels"] = q.get("tf_labels")
     attempt["tryout"] = t
     return attempt

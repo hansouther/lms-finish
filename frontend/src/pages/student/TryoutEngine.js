@@ -12,6 +12,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import MathText, { QuestionImage } from "@/components/common/MathText";
+import { TfMultiAnswer } from "@/components/common/TfMulti";
+import { tfLabels } from "@/lib/tf";
 import { toast } from "sonner";
 
 function fmtTime(s) {
@@ -119,7 +121,7 @@ export default function TryoutEngine() {
         <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8" data-testid="exam-question">
           <div className="flex items-center justify-between">
             <span className="rounded-full bg-[#E6F5F8] text-[#0E7490] px-3 py-1 text-xs font-bold">Soal {idx + 1} / {tryout.questions.length}</span>
-            <span className="text-xs text-[#94A3B8] font-mono2">{q.points} poin · {({ single: "Pilihan Ganda", multiple: "Pilihan Ganda Kompleks", truefalse: "Benar/Salah", essay: "Esai" })[q.type]}</span>
+            <span className="text-xs text-[#94A3B8] font-mono2">{q.points} poin · {({ single: "Pilihan Ganda", multiple: "Pilihan Ganda Kompleks", truefalse: "Benar/Salah", truefalse_multi: "Benar/Salah Majemuk", essay: "Esai" })[q.type]}</span>
           </div>
           <MathText as="div" text={q.text} className="mt-5 block text-lg text-[#0A1128] leading-relaxed" data-testid="exam-question-text" />
           <QuestionImage src={q.image_url} className="mt-4" testid="exam-question-image" />
@@ -141,13 +143,14 @@ export default function TryoutEngine() {
             ))}
             {q.type === "truefalse" && (
               <RadioGroup value={val[0] || ""} onValueChange={(v) => setVal([v])}>
-                {[["true", "Benar"], ["false", "Salah"]].map(([v, l]) => (
+                {[["true", tfLabels(q)[0]], ["false", tfLabels(q)[1]]].map(([v, l]) => (
                   <label key={v} className={`flex items-center gap-3 rounded-xl border p-4 cursor-pointer transition-colors duration-200 ${val[0] === v ? "border-[#0E7490] bg-[#E6F5F8]" : "border-[#E2E8F0] hover:bg-[#EFF6F8]"}`} data-testid={`opt-${v}`}>
                     <RadioGroupItem value={v} /> <span className="text-sm text-[#0A1128]">{l}</span>
                   </label>
                 ))}
               </RadioGroup>
             )}
+            {q.type === "truefalse_multi" && <TfMultiAnswer q={q} value={val} onChange={setVal} />}
             {q.type === "essay" && (
               <div>
                 <Input value={val[0] || ""} onChange={(e) => setVal([e.target.value])} placeholder="Ketik jawaban singkat Anda..." className="h-12" data-testid="essay-input" />

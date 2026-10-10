@@ -4,16 +4,18 @@ import useFetch from "@/hooks/useFetch";
 import { Loading } from "@/components/common/States";
 import { Button } from "@/components/ui/button";
 import MathText, { QuestionImage } from "@/components/common/MathText";
+import { TfMultiReview } from "@/components/common/TfMulti";
+import { tfLabels } from "@/lib/tf";
 
-const TYPE_LABEL = { single: "Pilihan Ganda", multiple: "Pilihan Ganda Kompleks", truefalse: "Benar/Salah", essay: "Esai" };
+const TYPE_LABEL = { single: "Pilihan Ganda", multiple: "Pilihan Ganda Kompleks", truefalse: "Benar/Salah", truefalse_multi: "Benar/Salah Majemuk", essay: "Esai" };
 
 function answerText(pq) {
   const opts = pq.options || [];
   const toText = (arr) => arr.map((a) => {
     const o = opts.find((o) => o.id === a);
     if (o) return o.text;
-    if (a === "true") return "Benar";
-    if (a === "false") return "Salah";
+    if (a === "true") return tfLabels(pq)[0];
+    if (a === "false") return tfLabels(pq)[1];
     return a;
   }).join(", ");
   return { student: toText(pq.student_answer || []) || "(kosong)", correct: toText(pq.correct_answers || []) };
@@ -81,10 +83,12 @@ export default function TryoutResult() {
                 </div>
                 <span className="font-mono2 text-sm font-bold shrink-0" style={{ color: pq.correct ? "#10B981" : "#EF4444" }}>{pq.earned}/{pq.points}</span>
               </div>
+              {pq.type === "truefalse_multi" ? <TfMultiReview pq={pq} /> : (
               <div className="mt-3 ml-8 grid sm:grid-cols-2 gap-2 text-sm">
                 <div className="rounded-lg bg-[#EFF6F8] px-3 py-2"><span className="text-xs text-[#94A3B8]">Jawaban Anda:</span> <MathText text={at.student} className="text-[#0A1128]" /></div>
                 <div className="rounded-lg bg-[#ECFDF5] px-3 py-2"><span className="text-xs text-[#94A3B8]">Kunci:</span> <MathText text={at.correct} className="text-[#10B981] font-medium" /></div>
               </div>
+              )}
             </div>
           );
         })}

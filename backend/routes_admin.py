@@ -121,9 +121,10 @@ async def _rescore_attempts(tryout_id: str, tryout: dict):
 
 
 class QuestionBody(BaseModel):
-    type: str  # single | multiple | truefalse | essay
+    type: str  # single | multiple | truefalse | truefalse_multi | essay
     text: str
     image_url: Optional[str] = None
+    tf_labels: Optional[List[str]] = None
     options: List[dict] = []
     correct_answers: List[str] = []
     points: int = 1
@@ -807,7 +808,8 @@ _LETTERS = ["a", "b", "c", "d", "e", "f"]
 
 def _row_to_question(row: dict, order: int):
     t = str(row.get("type") or "").strip().lower()
-    if t not in ("single", "multiple", "truefalse", "essay"):
+    t = {"bs_majemuk": "truefalse_multi", "benar_salah_majemuk": "truefalse_multi", "truefalse-multi": "truefalse_multi"}.get(t, t)
+    if t not in ("single", "multiple", "truefalse", "truefalse_multi", "essay"):
         return None, f"Tipe tidak valid: {t!r}"
     text = str(row.get("text") or "").strip()
     if not text:
@@ -845,6 +847,17 @@ def _row_to_question(row: dict, order: int):
         else:
             return None, "Kunci benar/salah tidak valid"
         correct, options = [val], []
+    elif t == "truefalse_multi":
+        keys = [k.strip().lower() for k in re.split(r"[;,|]", correct_raw) if k.strip()]
+        if not options or len(keys) != len(options):
+            return None, "Jumlah kunci (mis. B;S;B) harus sama dengan jumlah pernyataan di option_a.."
+        for o, k in zip(options, keys):
+            if k in ("true", "benar", "b", "ya", "1"):
+                correct.append(f"{o['id']}:true")
+            elif k in ("false", "salah", "s", "tidak", "0"):
+                correct.append(f"{o['id']}:false")
+            else:
+                return None, f"Kunci benar/salah tidak valid: {k!r}"
     else:  # essay
         correct = [c.strip() for c in re.split(r"[|;]", correct_raw) if c.strip()]
         options = []
@@ -857,7 +870,10 @@ def _row_to_question(row: dict, order: int):
     _MAP = {"mudah": "mudah", "easy": "mudah", "sedang": "sedang", "medium": "sedang",
             "sulit": "sulit", "susah": "sulit", "hard": "sulit"}
     dl = _MAP.get(dl)
-    return {"type": t, "text": text, "options": options, "correct_answers": correct,
+    lt = str(row.get("label_benar") or "").strip()
+    lf = str(row.get("label_salah") or "").strip()
+    tf_labels = [lt or "Benar", lf or "Salah"] if t in ("truefalse", "truefalse_multi") and (lt or lf) else None
+    return {"type": t, "text": text, "options": options, "correct_answers": correct, "tf_labels": tf_labels,
             "points": points, "order": order, "competency": comp, "difficulty_label": dl}, None
 
 
@@ -946,13 +962,14 @@ async def import_questions(tryout_id: str, file: UploadFile = File(...), user: d
 @router.get("/questions/template")
 async def questions_template(user: dict = Depends(admin_only)):
     csv_text = (
-        "type,text,option_a,option_b,option_c,option_d,correct,points,competency,tingkat,gambar\n"
-        "single,\"Berapa hasil 2+2?\",3,4,5,6,B,10,numerasi,mudah,\n"
-        "single,\"Hasil dari $\\frac{1}{2} + \\frac{1}{3}$ adalah ...\",$\\frac{5}{6}$,$\\frac{2}{5}$,$\\frac{1}{6}$,$\\frac{3}{5}$,A,10,numerasi,sedang,\n"
-        "multiple,\"Pilih bilangan genap\",2,3,4,5,\"A;C\",10,numerasi,sedang,\n"
-        "single,\"Perhatikan gambar. Luas segitiga tersebut adalah ...\",$12\\text{ cm}^2$,$24\\text{ cm}^2$,$6\\text{ cm}^2$,$18\\text{ cm}^2$,A,10,numerasi,sedang,segitiga.png\n"
-        "truefalse,\"Bumi berbentuk bulat\",,,,,benar,10,literasi,mudah,\n"
-        "essay,\"Ibu kota Indonesia?\",,,,,\"jakarta|dki jakarta\",10,literasi,sulit,\n"
+        "type,text,option_a,option_b,option_c,option_d,correct,points,competency,tingkat,gambar,label_benar,label_salah\n"
+        "single,\"Berapa hasil 2+2?\",3,4,5,6,B,10,numerasi,mudah,,,\n"
+        "single,\"Hasil dari $\\frac{1}{2} + \\frac{1}{3}$ adalah ...\",$\\frac{5}{6}$,$\\frac{2}{5}$,$\\frac{1}{6}$,$\\frac{3}{5}$,A,10,numerasi,sedang,,,\n"
+        "multiple,\"Pilih bilangan genap\",2,3,4,5,\"A;C\",10,numerasi,sedang,,,\n"
+        "single,\"Perhatikan gambar. Luas segitiga tersebut adalah ...\",$12\\text{ cm}^2$,$24\\text{ cm}^2$,$6\\text{ cm}^2$,$18\\text{ cm}^2$,A,10,numerasi,sedang,segitiga.png,,\n"
+        "truefalse,\"Bumi berbentuk bulat\",,,,,benar,10,literasi,mudah,,,\n"
+        "truefalse_multi,\"Bacalah teks berikut. Rani membeli 3 buku seharga Rp5.000 per buku dan membayar Rp20.000. Tentukan benar atau salah pernyataan berikut.\",Total harga buku Rp15.000,Uang kembalian Rp10.000,Jika membeli 4 buku uangnya pas,,\"B;S;B\",15,numerasi,sedang,,Sesuai,Tidak Sesuai\n"
+        "essay,\"Ibu kota Indonesia?\",,,,,\"jakarta|dki jakarta\",10,literasi,sulit,,,\n"
     )
     return Response(content=csv_text, media_type="text/csv",
                     headers={"Content-Disposition": "attachment; filename=template_soal.csv"})
@@ -965,7 +982,7 @@ async def questions_template_xlsx(user: dict = Depends(admin_only)):
     ws = wb.active
     ws.title = "Soal"
     headers = ["type", "text", "option_a", "option_b", "option_c", "option_d",
-               "option_e", "correct", "points", "competency", "tingkat", "gambar"]
+               "option_e", "correct", "points", "competency", "tingkat", "gambar", "label_benar", "label_salah"]
     ws.append(headers)
     samples = [
         ["single", "Berapa hasil 2+2?", "3", "4", "5", "6", "", "B", 10, "numerasi", "mudah", ""],
@@ -974,6 +991,8 @@ async def questions_template_xlsx(user: dict = Depends(admin_only)):
         ["single", "Perhatikan gambar. Luas segitiga tersebut adalah ...", r"$12\text{ cm}^2$", r"$24\text{ cm}^2$", r"$6\text{ cm}^2$", r"$18\text{ cm}^2$", "", "A", 10, "numerasi", "sedang", "segitiga.png"],
         ["multiple", "Pilih bilangan genap", "2", "3", "4", "5", "", "A;C", 10, "numerasi", "sedang", ""],
         ["truefalse", "Bumi berbentuk bulat", "", "", "", "", "", "benar", 10, "literasi", "mudah", ""],
+        ["truefalse_multi", "Bacalah teks berikut. Rani membeli 3 buku seharga Rp5.000 per buku dan membayar Rp20.000. Tentukan benar atau salah setiap pernyataan.", "Total harga buku Rp15.000", "Uang kembalian Rp10.000", "Jika membeli 4 buku uangnya pas", "", "", "B;S;B", 15, "numerasi", "sedang", "", "Sesuai", "Tidak Sesuai"],
+        ["truefalse_multi", r"Diketahui $f(x) = 2x + 3$. Tentukan benar/salah pernyataan berikut.", r"$f(1) = 5$", r"$f(0) = 2$", r"$f(-1) = 1$", "", "", "B;S;B", 15, "numerasi", "sulit", "", "", ""],
         ["essay", "Ibu kota Indonesia?", "", "", "", "", "", "jakarta|dki jakarta", 10, "literasi", "sulit", ""],
     ]
     for row in samples:
@@ -987,10 +1006,12 @@ async def questions_template_xlsx(user: dict = Depends(admin_only)):
         ["Petunjuk Pengisian Template Soal (Impor Massal)"],
         [""],
         ["Kolom", "Keterangan"],
-        ["type", "Tipe soal: single (PG), multiple (PG kompleks), truefalse, essay"],
+        ["type", "Tipe soal: single (PG), multiple (PG kompleks), truefalse (1 pernyataan), truefalse_multi (Benar/Salah majemuk: 1 teks + beberapa pernyataan), essay"],
         ["text", "Teks pertanyaan"],
         ["option_a..e", "Pilihan jawaban (untuk single/multiple). Kosongkan untuk truefalse/essay"],
-        ["correct", "Kunci: huruf A-E (pisah ; untuk multiple), benar/salah untuk truefalse, atau teks (pisah |) untuk essay"],
+        ["correct", "Kunci: huruf A-E (pisah ; untuk multiple), benar/salah untuk truefalse, B;S;B (urut sesuai option_a..e) untuk truefalse_multi, atau teks (pisah |) untuk essay"],
+        ["truefalse_multi", "Tulis teks deskripsi/stimulus di kolom text, lalu tiap pernyataan di option_a, option_b, dst. Nilai dihitung proporsional dari jumlah pernyataan yang benar."],
+        ["label_benar / label_salah", "OPSIONAL untuk truefalse & truefalse_multi. Ganti teks tombol, mis. Sesuai / Tidak Sesuai, Fakta / Opini, Ya / Tidak. Kosong = Benar / Salah."],
         ["points", "Poin/bobot soal (angka)"],
         ["competency", "numerasi | literasi | umum (untuk laporan AKM)"],
         ["tingkat", "Tingkat kesulitan IRT: mudah | sedang | sulit"],

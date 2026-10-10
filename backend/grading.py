@@ -4,6 +4,7 @@ Question types:
 - single      : one correct option (pilihan ganda)
 - multiple    : several correct options (pilihan ganda kompleks) -> exact set match
 - truefalse   : benar / salah
+- truefalse_multi : satu stimulus + beberapa pernyataan benar/salah; nilai proporsional
 - essay        : free text, case-insensitive & trimmed match against accepted answers
 """
 
@@ -16,6 +17,7 @@ def strip_answers(q: dict) -> dict:
         "text": q["text"],
         "image_url": q.get("image_url"),
         "options": q.get("options", []),
+        "tf_labels": q.get("tf_labels"),
         "points": q.get("points", 1),
         "order": q.get("order", 0),
     }
@@ -28,6 +30,14 @@ def grade_question(q: dict, ans) -> int:
     ans = ans or []
     if isinstance(ans, str):
         ans = [ans]
+
+    if t == "truefalse_multi":
+        key = {c.split(":", 1)[0]: c.split(":", 1)[1] for c in correct if ":" in c}
+        if not key:
+            return 0
+        given = {a.split(":", 1)[0]: a.split(":", 1)[1] for a in ans if isinstance(a, str) and ":" in a}
+        hits = sum(1 for sid, v in key.items() if given.get(sid) == v)
+        return round(points * hits / len(key))
 
     ok = False
     if t == "single":
