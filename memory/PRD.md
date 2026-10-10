@@ -55,3 +55,8 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - PWA: manifest (fullscreen, ikon 192/512), sw.js, apple-touch-icon; InstallAppBanner di /student/tryouts (Android prompt, iOS panduan Add to Home Screen)
 - useSplitScreenGuard: deteksi split-screen/jendela mengambang (viewport <60% layar, abaikan saat mengetik) + window blur >1.5s → peringatan existing; SplitScreenOverlay; dedupe 2.5s
 - Backlog: riwayat pelanggaran detail untuk admin
+
+## Update Jun 2026 — Tanpa verifikasi admin untuk siswa + Biodata wajib
+- Siswa (email & Google) langsung approved; migrasi startup: siswa pending → approved. Proktor/tentor tetap diverifikasi
+- /lengkapi-biodata (CompleteBiodata.js): wajib isi sekolah, kelas, WA, tujuan + pernyataan kejujuran; ProtectedRoute redirect bila school_id/grade kosong
+- Export repo kedua (LMS-test1) diperbarui: /app/frontend/public/downloads/binara-update.zip & .patch
