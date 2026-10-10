@@ -22,6 +22,18 @@ function fmtTime(s) {
   return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 }
 
+function SaveIndicator({ state }) {
+  const at = state.at ? new Date(state.at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
+  const map = {
+    idle: ["text-[#94A3B8]", "Belum ada jawaban"],
+    saving: ["text-[#C9A227]", "Menyimpan..."],
+    saved: ["text-[#10B981]", `Tersimpan di server ${at}`],
+    error: ["text-red-600", "Gagal menyimpan, mencoba lagi (aman di perangkat)"],
+  };
+  const [cls, label] = map[state.status] || map.idle;
+  return <span className={`hidden sm:inline text-xs font-medium ${cls}`} data-testid="exam-save-status">{label}</span>;
+}
+
 export default function TryoutEngine() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -33,6 +45,8 @@ export default function TryoutEngine() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const submittedRef = useRef(false);
+  const [saveState, setSaveState] = useState({ status: "idle", at: null });
+  const dirtyRef = useRef(false);
 
   const doSubmit = useCallback(async () => {
     if (submittedRef.current) return;
@@ -61,16 +75,45 @@ export default function TryoutEngine() {
         setTryout(t);
         setAttemptId(att.id);
         // Cek riwayat jawaban di peramban siswa
-        const localAnswers = JSON.parse(localStorage.getItem(`tryout_${att.id}_answers`));
-        setAnswers(localAnswers || att.answers || {});
-        
-        setTimeLeft((t.duration_minutes || 60) * 60);
+        const localAnswers = JSON.parse(localStorage.getItem(`tryout_${att.id}_answers`) || "null");
+        setAnswers({ ...(att.answers || {}), ...(localAnswers || {}) });
+        if (localAnswers) dirtyRef.current = true;
+        setSaveState({ status: att.last_saved_at ? "saved" : "idle", at: att.last_saved_at || null });
+        setTimeLeft(att.remaining_seconds ?? (t.duration_minutes || 60) * 60);
       } catch (e) {
         toast.error(apiError(e));
         navigate("/student/tryouts", { replace: true });
       }
     })();
   }, [id, navigate]);
+
+  useEffect(() => {
+    if (!attemptId || !dirtyRef.current) return;
+    const h = setTimeout(async () => {
+      if (submittedRef.current) return;
+      setSaveState((s) => ({ ...s, status: "saving" }));
+      try {
+        const { data } = await api.put(`/student/attempts/${attemptId}/progress`, { answers });
+        dirtyRef.current = false;
+        setSaveState({ status: "saved", at: data.saved_at });
+      } catch (e) {
+        if (e?.response?.status === 409 || e?.response?.status === 404) {
+          localStorage.removeItem(`tryout_${attemptId}_answers`);
+          toast.error(apiError(e));
+          navigate("/student/tryouts", { replace: true });
+          return;
+        }
+        setSaveState((s) => ({ ...s, status: "error" }));
+      }
+    }, 1200);
+    return () => clearTimeout(h);
+  }, [answers, attemptId, navigate]);
+
+  useEffect(() => {
+    if (saveState.status !== "error") return;
+    const h = setTimeout(() => setAnswers((a) => ({ ...a })), 5000);
+    return () => clearTimeout(h);
+  }, [saveState]);
 
   useEffect(() => {
     if (timeLeft == null) return;
@@ -87,6 +130,7 @@ export default function TryoutEngine() {
   const setVal = (v) => {
     setAnswers((prev) => {
       const updatedAnswers = { ...prev, [q.id]: v };
+      dirtyRef.current = true;
       // Simpan jawaban baru langsung ke memori peramban
       if (attemptId) {
         localStorage.setItem(`tryout_${attemptId}_answers`, JSON.stringify(updatedAnswers));
@@ -111,8 +155,11 @@ export default function TryoutEngine() {
             <p className="text-xs text-[#94A3B8]">{tryout.subject}</p>
           </div>
         </div>
+        <div className="flex items-center gap-3">
+        <SaveIndicator state={saveState} />
         <div className={`flex items-center gap-2 rounded-full px-4 py-2 font-mono2 font-bold ${timeLeft < 60 ? "bg-red-50 text-red-600" : "bg-[#E6F5F8] text-[#0E7490]"}`} data-testid="exam-timer">
           <Clock className="h-4 w-4" /> {fmtTime(timeLeft)}
+        </div>
         </div>
       </header>
 

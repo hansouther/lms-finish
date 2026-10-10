@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, FileText, Settings2, BarChart3, HelpCircle, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, Settings2, BarChart3, HelpCircle, Users, Activity, CalendarClock } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
 import api, { apiError } from "@/lib/api";
 import PageHeader from "@/components/common/PageHeader";
@@ -13,10 +13,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import IrtScaleFields, { EMPTY_CUSTOM, toCustomPayload, SCALE_PRESETS } from "@/components/common/IrtScaleFields";
-import { formatRupiah } from "@/lib/format";
+import { formatRupiah, formatDateTime, toLocalInput, fromLocalInput } from "@/lib/format";
 import { toast } from "sonner";
 
-const EMPTY = { title: "", description: "", subject: "", duration_minutes: 60, published: false, irt_scale: "snbt", irt_scale_custom: EMPTY_CUSTOM, price: 0 };
+const EMPTY = { title: "", description: "", subject: "", duration_minutes: 60, published: false, irt_scale: "snbt", irt_scale_custom: EMPTY_CUSTOM, price: 0, start_at: "", end_at: "" };
+const SCHED = { upcoming: ["Belum dibuka", "#C9A227", "#FBF3DC"], open: ["Dibuka", "#10B981", "#ECFDF5"], closed: ["Ditutup", "#EF4444", "#FEF2F2"] };
 const scaleLabel = (t) => (SCALE_PRESETS.find((p) => p.key === (t.irt_scale || "snbt")) || SCALE_PRESETS[0]).label;
 
 export default function ManageTryouts() {
@@ -28,10 +29,11 @@ export default function ManageTryouts() {
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e?.target ? e.target.value : e }));
 
   const openNew = () => { setForm(EMPTY); setEditId(null); setOpen(true); };
-  const openEdit = (t) => { setForm({ title: t.title, description: t.description || "", subject: t.subject, duration_minutes: t.duration_minutes, published: t.published, irt_scale: t.irt_scale || "snbt", irt_scale_custom: t.irt_scale_custom || EMPTY_CUSTOM, price: t.price || 0 }); setEditId(t.id); setOpen(true); };
+  const openEdit = (t) => { setForm({ title: t.title, description: t.description || "", subject: t.subject, duration_minutes: t.duration_minutes, published: t.published, irt_scale: t.irt_scale || "snbt", irt_scale_custom: t.irt_scale_custom || EMPTY_CUSTOM, price: t.price || 0, start_at: toLocalInput(t.start_at), end_at: toLocalInput(t.end_at) }); setEditId(t.id); setOpen(true); };
 
   const save = async () => {
-    const payload = { ...form, duration_minutes: parseInt(form.duration_minutes || 60, 10), price: Math.max(0, parseInt(form.price || 0, 10) || 0), irt_scale_custom: form.irt_scale === "custom" ? toCustomPayload(form.irt_scale_custom) : null };
+    if (form.start_at && form.end_at && new Date(form.end_at) <= new Date(form.start_at)) return toast.error("Waktu tutup harus setelah waktu buka");
+    const payload = { ...form, start_at: fromLocalInput(form.start_at), end_at: fromLocalInput(form.end_at), duration_minutes: parseInt(form.duration_minutes || 60, 10), price: Math.max(0, parseInt(form.price || 0, 10) || 0), irt_scale_custom: form.irt_scale === "custom" ? toCustomPayload(form.irt_scale_custom) : null };
     try {
       if (editId) {
         const { data: res } = await api.put(`/admin/tryouts/${editId}`, payload);
@@ -64,10 +66,17 @@ export default function ManageTryouts() {
                 <span>{t.duration_minutes} menit</span>
                 <span className={`font-semibold ${t.price > 0 ? "text-[#C9A227]" : "text-[#10B981]"}`} data-testid={`tryout-price-badge-${t.id}`}>{t.price > 0 ? formatRupiah(t.price) : "Gratis"}</span>
               </div>
+              <div className="mt-2 flex items-center gap-1.5 text-xs text-[#475569]" data-testid={`tryout-schedule-${t.id}`}>
+                <CalendarClock className="h-3.5 w-3.5 text-[#94A3B8]" />
+                {t.start_at || t.end_at ? <span>{t.start_at ? formatDateTime(t.start_at) : "Kapan saja"} — {t.end_at ? formatDateTime(t.end_at) : "tanpa batas"}</span> : <span className="text-[#94A3B8]">Tanpa jadwal (selalu dibuka)</span>}
+                {SCHED[t.schedule_status] && <span className="ml-1 rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ color: SCHED[t.schedule_status][1], backgroundColor: SCHED[t.schedule_status][2] }}>{SCHED[t.schedule_status][0]}</span>}
+                {t.in_progress_count > 0 && <span className="ml-1 rounded-full bg-[#E6F5F8] px-2 py-0.5 text-[10px] font-semibold text-[#0E7490]">{t.in_progress_count} sedang mengerjakan</span>}
+              </div>
               <div className="mt-2"><span className="inline-flex items-center rounded-full border border-[#0E7490]/30 bg-[#E6F5F8] px-2.5 py-0.5 text-[11px] font-semibold text-[#0E7490]" data-testid={`tryout-scale-${t.id}`}>Skala IRT: {scaleLabel(t)}</span></div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => navigate(`/admin/tryouts/${t.id}/builder`)} className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" data-testid={`build-${t.id}`}><Settings2 className="h-4 w-4" /> Kelola Soal</Button>
                 <Button size="sm" variant="outline" onClick={() => navigate(`/admin/tryouts/${t.id}/results`)} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid={`results-${t.id}`}><BarChart3 className="h-4 w-4" /> Hasil</Button>
+                <Button size="sm" variant="outline" onClick={() => navigate(`/admin/tryouts/${t.id}/monitor`)} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid={`monitor-${t.id}`}><Activity className="h-4 w-4" /> Pantau Peserta</Button>
                 <Button size="sm" variant="ghost" onClick={() => openEdit(t)} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid={`edit-tryout-${t.id}`}><Pencil className="h-4 w-4" /></Button>
                 <ConfirmButton onConfirm={() => del(t.id)} trigger={<Button size="sm" variant="ghost" className="rounded-full hover:bg-red-50 hover:text-red-600" data-testid={`delete-tryout-${t.id}`}><Trash2 className="h-4 w-4" /></Button>} />
               </div>
@@ -77,7 +86,7 @@ export default function ManageTryouts() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader><DialogTitle>{editId ? "Edit Try Out" : "Buat Try Out"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Judul</Label><Input value={form.title} onChange={set("title")} className="mt-1.5" data-testid="tryout-title" /></div>
@@ -85,6 +94,14 @@ export default function ManageTryouts() {
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Mata Pelajaran</Label><Input value={form.subject} onChange={set("subject")} className="mt-1.5" data-testid="tryout-subject" /></div>
               <div><Label>Durasi (menit)</Label><Input type="number" value={form.duration_minutes} onChange={set("duration_minutes")} className="mt-1.5" data-testid="tryout-duration" /></div>
+            </div>
+            <div className="rounded-lg border border-[#E2E8F0] p-3" data-testid="tryout-schedule-fields">
+              <Label className="flex items-center gap-1.5"><CalendarClock className="h-4 w-4 text-[#0E7490]" /> Jadwal Try Out <span className="text-[#94A3B8] font-normal">(opsional)</span></Label>
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Dibuka</Label><Input type="datetime-local" value={form.start_at} onChange={set("start_at")} className="mt-1" data-testid="tryout-start-at" /></div>
+                <div><Label className="text-xs">Ditutup</Label><Input type="datetime-local" value={form.end_at} onChange={set("end_at")} className="mt-1" data-testid="tryout-end-at" /></div>
+              </div>
+              <p className="mt-1.5 text-xs text-[#94A3B8]">Siswa hanya bisa mulai di antara waktu ini. Saat ditutup, waktu pengerjaan yang sedang berjalan ikut berakhir. Kosongkan bila tanpa batas.</p>
             </div>
             <div>
               <Label>Harga (Rp) — 0 = gratis</Label>

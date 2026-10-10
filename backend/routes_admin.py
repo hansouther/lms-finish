@@ -18,6 +18,8 @@ from routes_files import save_question_image, IMAGE_EXT
 import notifications
 import analysis
 import irt
+from grading import grade_attempt
+from tryout_session import schedule_status, remaining_seconds, answered_count
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 admin_only = require_roles("admin")
@@ -412,6 +414,8 @@ async def list_tryouts(user: dict = Depends(admin_only)):
     for t in items:
         t["question_count"] = await db.questions.count_documents({"tryout_id": t["id"]})
         t["attempt_count"] = await db.attempts.count_documents({"tryout_id": t["id"], "status": "submitted"})
+        t["in_progress_count"] = await db.attempts.count_documents({"tryout_id": t["id"], "status": "in_progress"})
+        t["schedule_status"] = schedule_status(t)
     return items
 
 
@@ -609,6 +613,84 @@ async def tryout_results(tryout_id: str, user: dict = Depends(admin_only)):
     for a in attempts:
         a["student"] = smap.get(a["student_id"])
     return sorted(attempts, key=lambda a: a.get("percentage", 0), reverse=True)
+
+
+@router.get("/tryouts/{tryout_id}/monitor")
+async def tryout_monitor(tryout_id: str, user: dict = Depends(admin_only)):
+    t = await db.tryouts.find_one({"id": tryout_id}, {"_id": 0})
+    if not t:
+        raise HTTPException(status_code=404, detail="Try Out tidak ditemukan")
+    total_q = await db.questions.count_documents({"tryout_id": tryout_id})
+    attempts = await db.attempts.find({"tryout_id": tryout_id}, {"_id": 0, "per_question": 0}).to_list(5000)
+    grants = await db.tryout_retakes.find({"tryout_id": tryout_id, "used": False}, {"_id": 0}).to_list(5000)
+    sids = list({a["student_id"] for a in attempts} | {g["student_id"] for g in grants})
+    smap = {u["id"]: u for u in await db.users.find({"id": {"$in": sids}}, {"_id": 0, "id": 1, "name": 1, "email": 1}).to_list(5000)}
+    rows = []
+    for a in attempts:
+        answers = a.get("answers") or {}
+        status = a["status"]
+        left = remaining_seconds(a, t) if status == "in_progress" else 0
+        if status == "in_progress" and left <= 0:
+            status = "expired"
+        rows.append({
+            "attempt_id": a["id"], "student": smap.get(a["student_id"]), "student_id": a["student_id"],
+            "status": status, "answered_count": a.get("answered_count", answered_count(answers)),
+            "total_questions": total_q, "started_at": a.get("started_at"), "submitted_at": a.get("submitted_at"),
+            "last_saved_at": a.get("last_saved_at") or (a.get("submitted_at") if a["status"] == "submitted" else None),
+            "remaining_seconds": left, "percentage": a.get("percentage") if a["status"] == "submitted" else None,
+            "retake": bool(a.get("bypass_schedule")),
+        })
+    for g in grants:
+        rows.append({"attempt_id": None, "student": smap.get(g["student_id"]), "student_id": g["student_id"],
+                     "status": "retake_pending", "answered_count": 0, "total_questions": total_q,
+                     "started_at": None, "submitted_at": None, "last_saved_at": None, "remaining_seconds": 0,
+                     "percentage": None, "retake": True, "granted_at": g.get("created_at")})
+    order = {"in_progress": 0, "expired": 1, "retake_pending": 2, "submitted": 3}
+    rows.sort(key=lambda r: (order.get(r["status"], 9), (r["student"] or {}).get("name") or ""))
+    summary = {k: sum(1 for r in rows if r["status"] == k) for k in order}
+    return {"tryout": {"id": t["id"], "title": t["title"], "start_at": t.get("start_at"), "end_at": t.get("end_at"),
+                       "duration_minutes": t.get("duration_minutes"), "schedule_status": schedule_status(t)},
+            "summary": summary, "rows": rows, "server_now": now_iso()}
+
+
+@router.post("/tryouts/{tryout_id}/attempts/{attempt_id}/reset")
+async def reset_attempt(tryout_id: str, attempt_id: str, background: BackgroundTasks, user: dict = Depends(admin_only)):
+    a = await db.attempts.find_one({"id": attempt_id, "tryout_id": tryout_id}, {"_id": 0, "student_id": 1, "status": 1})
+    if not a:
+        raise HTTPException(status_code=404, detail="Data pengerjaan tidak ditemukan")
+    sid = a["student_id"]
+    await db.attempts.delete_many({"tryout_id": tryout_id, "student_id": sid})
+    await db.tryout_retakes.delete_many({"tryout_id": tryout_id, "student_id": sid, "used": False})
+    await db.tryout_retakes.insert_one({"id": new_id(), "tryout_id": tryout_id, "student_id": sid, "used": False,
+                                        "granted_by": user["id"], "created_at": now_iso()})
+    if a["status"] == "submitted":
+        from routes_student import _recalibrate_tryout
+        background.add_task(_recalibrate_tryout, tryout_id)
+    return {"ok": True}
+
+
+@router.delete("/tryouts/{tryout_id}/retakes/{student_id}")
+async def cancel_retake(tryout_id: str, student_id: str, user: dict = Depends(admin_only)):
+    await db.tryout_retakes.delete_many({"tryout_id": tryout_id, "student_id": student_id, "used": False})
+    return {"ok": True}
+
+
+@router.post("/tryouts/{tryout_id}/attempts/{attempt_id}/force-submit")
+async def force_submit(tryout_id: str, attempt_id: str, background: BackgroundTasks, user: dict = Depends(admin_only)):
+    a = await db.attempts.find_one({"id": attempt_id, "tryout_id": tryout_id}, {"_id": 0})
+    if not a:
+        raise HTTPException(status_code=404, detail="Data pengerjaan tidak ditemukan")
+    if a["status"] == "submitted":
+        raise HTTPException(status_code=400, detail="Sudah dikumpulkan")
+    t = await db.tryouts.find_one({"id": tryout_id}, {"_id": 0})
+    questions = await db.questions.find({"tryout_id": tryout_id}, {"_id": 0}).to_list(1000)
+    result = grade_attempt(questions, a.get("answers") or {})
+    irt_score = irt.score_attempt(questions, result.get("per_question"), irt.resolve_scale(t))
+    await db.attempts.update_one({"id": attempt_id}, {"$set": {
+        "status": "submitted", "submitted_at": now_iso(), "force_submitted_by": user["id"], **result, **irt_score}})
+    from routes_student import _recalibrate_tryout
+    background.add_task(_recalibrate_tryout, tryout_id)
+    return {"ok": True, "percentage": result["percentage"]}
 
 
 # ---------- Weakness Analysis & Score Export (all schools) ----------

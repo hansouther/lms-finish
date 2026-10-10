@@ -33,6 +33,7 @@ import ClassManage from "@/pages/admin/ClassManage";
 import ManageTryouts from "@/pages/admin/ManageTryouts";
 import TryoutBuilder from "@/pages/admin/TryoutBuilder";
 import TryoutResults from "@/pages/admin/TryoutResults";
+import TryoutMonitor from "@/pages/admin/TryoutMonitor";
 import ManageBroadcast from "@/pages/admin/ManageBroadcast";
 import ManagePartnerships from "@/pages/admin/ManagePartnerships";
 import ManageUsers from "@/pages/admin/ManageUsers";
@@ -112,6 +113,7 @@ function AppRoutes() {
           <Route path="/admin/tryouts" element={<ManageTryouts />} />
           <Route path="/admin/tryouts/:id/builder" element={<TryoutBuilder />} />
           <Route path="/admin/tryouts/:id/results" element={<TryoutResults />} />
+          <Route path="/admin/tryouts/:id/monitor" element={<TryoutMonitor />} />
           <Route path="/admin/broadcasts" element={<ManageBroadcast />} />
           <Route path="/admin/partnerships" element={<ManagePartnerships />} />
           <Route path="/admin/users" element={<ManageUsers />} />

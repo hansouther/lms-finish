@@ -9,6 +9,7 @@ from security import require_roles
 from grading import strip_answers, grade_attempt
 import analysis
 import irt
+from tryout_session import schedule_status, remaining_seconds, answered_count
 
 router = APIRouter(prefix="/api/student", tags=["student"])
 student_only = require_roles("student")
@@ -290,6 +291,7 @@ async def tryouts(user: dict = Depends(student_only)):
     my_attempts = await db.attempts.find({"student_id": user["id"]}, {"_id": 0, "per_question": 0}).to_list(200)
     amap = {a["tryout_id"]: a for a in my_attempts}
     access = {r["tryout_id"] for r in await db.tryout_access.find({"student_id": user["id"]}, {"_id": 0, "tryout_id": 1}).to_list(500)}
+    grants = {r["tryout_id"] for r in await db.tryout_retakes.find({"student_id": user["id"], "used": False}, {"_id": 0, "tryout_id": 1}).to_list(500)}
     tids = [t["id"] for t in items]
     qc_map = {}
     if tids:
@@ -306,6 +308,8 @@ async def tryouts(user: dict = Depends(student_only)):
         t["my_percentage"] = att.get("percentage") if att and att["status"] == "submitted" else None
         t["price"] = int(t.get("price") or 0)
         t["has_access"] = t["price"] <= 0 or t["id"] in access or att is not None
+        t["schedule_status"] = schedule_status(t)
+        t["retake_granted"] = t["id"] in grants
     return items
 
 
@@ -319,6 +323,10 @@ async def tryout_detail(tryout_id: str, user: dict = Depends(student_only)):
         has_access = await db.tryout_access.find_one({"tryout_id": tryout_id, "student_id": user["id"]})
         if not has_attempt and not has_access:
             raise HTTPException(status_code=402, detail="Try Out ini berbayar. Selesaikan pembayaran untuk mengerjakan.")
+    if t.get("kind") != "exercise" and schedule_status(t) == "upcoming":
+        if not await db.attempts.find_one({"tryout_id": tryout_id, "student_id": user["id"]}) and \
+                not await db.tryout_retakes.find_one({"tryout_id": tryout_id, "student_id": user["id"], "used": False}):
+            raise HTTPException(status_code=403, detail="Try Out belum dibuka. Silakan kembali sesuai jadwal.")
     questions = await db.questions.find({"tryout_id": tryout_id}, {"_id": 0}).sort("order", 1).to_list(200)
     if t.get("kind") == "exercise":
         random.shuffle(questions)
@@ -339,8 +347,15 @@ async def start_attempt(tryout_id: str, user: dict = Depends(student_only)):
         {"tryout_id": tryout_id, "student_id": user["id"], "status": "in_progress"}, {"_id": 0}
     )
     if in_progress:
-        return in_progress
+        return {**in_progress, "remaining_seconds": remaining_seconds(in_progress, t)}
+    grant = None
     if not is_exercise:
+        grant = await db.tryout_retakes.find_one({"tryout_id": tryout_id, "student_id": user["id"], "used": False}, {"_id": 0})
+        state = schedule_status(t)
+        if not grant and state == "upcoming":
+            raise HTTPException(status_code=403, detail="Try Out belum dibuka. Silakan kembali sesuai jadwal.")
+        if not grant and state == "closed":
+            raise HTTPException(status_code=403, detail="Try Out sudah ditutup.")
         submitted = await db.attempts.find_one(
             {"tryout_id": tryout_id, "student_id": user["id"], "status": "submitted"}, {"_id": 0}
         )
@@ -362,9 +377,32 @@ async def start_attempt(tryout_id: str, user: dict = Depends(student_only)):
         "started_at": now_iso(),
         "submitted_at": None,
         "duration_minutes": t.get("duration_minutes", 60),
+        "bypass_schedule": bool(grant),
+        "answered_count": 0,
+        "last_saved_at": None,
     }
     await db.attempts.insert_one(attempt)
-    return {k: v for k, v in attempt.items() if k != "_id"}
+    if grant:
+        await db.tryout_retakes.update_one({"id": grant["id"]}, {"$set": {"used": True, "used_at": now_iso()}})
+    out = {k: v for k, v in attempt.items() if k != "_id"}
+    return {**out, "remaining_seconds": remaining_seconds(attempt, t)}
+
+
+class ProgressBody(BaseModel):
+    answers: Dict[str, List[str]]
+
+
+@router.put("/attempts/{attempt_id}/progress")
+async def save_progress(attempt_id: str, body: ProgressBody, user: dict = Depends(student_only)):
+    attempt = await db.attempts.find_one({"id": attempt_id, "student_id": user["id"]}, {"_id": 0, "status": 1})
+    if not attempt:
+        raise HTTPException(status_code=404, detail="Percobaan tidak ditemukan")
+    if attempt["status"] != "in_progress":
+        raise HTTPException(status_code=409, detail="Percobaan sudah dikumpulkan atau direset admin")
+    saved_at = now_iso()
+    await db.attempts.update_one({"id": attempt_id}, {"$set": {
+        "answers": body.answers, "answered_count": answered_count(body.answers), "last_saved_at": saved_at}})
+    return {"ok": True, "saved_at": saved_at}
 
 
 async def _recalibrate_tryout(tryout_id: str):

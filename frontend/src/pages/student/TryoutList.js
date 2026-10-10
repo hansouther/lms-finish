@@ -5,7 +5,7 @@ import useFetch from "@/hooks/useFetch";
 import PageHeader from "@/components/common/PageHeader";
 import { Loading, Empty } from "@/components/common/States";
 import { Button } from "@/components/ui/button";
-import { formatRupiah } from "@/lib/format";
+import { formatRupiah, formatDateTime } from "@/lib/format";
 import { payItem } from "@/lib/midtrans";
 
 const STATUS = {
@@ -41,6 +41,7 @@ export default function TryoutList() {
                 <div className="mt-4 flex items-center gap-4 text-xs text-[#94A3B8]">
                   <span className="flex items-center gap-1"><HelpCircle className="h-3.5 w-3.5" /> {t.question_count} soal</span>
                   <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {t.duration_minutes} menit</span>
+                  {t.end_at && t.schedule_status === "open" && <span className="flex items-center gap-1" data-testid={`tryout-closes-${t.id}`}>Tutup {formatDateTime(t.end_at)}</span>}
                   <span className={`ml-auto font-semibold ${t.price > 0 ? "text-[#C9A227]" : "text-[#10B981]"}`} data-testid={`tryout-price-${t.id}`}>{t.price > 0 ? formatRupiah(t.price) : "Gratis"}</span>
                 </div>
                 <div className="mt-5">
@@ -51,13 +52,17 @@ export default function TryoutList() {
                         <Eye className="h-4 w-4" /> Lihat Hasil
                       </Button>
                     </div>
+                  ) : t.attempt_status !== "in_progress" && !t.retake_granted && t.schedule_status !== "open" ? (
+                    <div className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-center text-xs font-semibold text-[#475569]" data-testid={`tryout-schedule-${t.id}`}>
+                      {t.schedule_status === "upcoming" ? `Dibuka ${formatDateTime(t.start_at)}` : "Try Out sudah ditutup"}
+                    </div>
                   ) : !t.has_access ? (
                     <Button className="w-full rounded-full bg-[#C9A227] hover:bg-[#A9871C] text-[#0A1128] font-semibold" disabled={busy === t.id} onClick={() => buy(t)} data-testid={`buy-tryout-${t.id}`}>
                       {busy === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />} Beli Akses · {formatRupiah(t.price)}
                     </Button>
                   ) : (
                     <Button className="w-full rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" onClick={() => navigate(`/student/exam/${t.id}`)} data-testid={`start-tryout-${t.id}`}>
-                      <PlayCircle className="h-4 w-4" /> {t.attempt_status === "in_progress" ? "Lanjutkan" : "Mulai Kerjakan"}
+                      <PlayCircle className="h-4 w-4" /> {t.attempt_status === "in_progress" ? "Lanjutkan" : t.retake_granted ? "Ulangi (izin admin)" : "Mulai Kerjakan"}
                     </Button>
                   )}
                 </div>
