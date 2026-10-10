@@ -1,0 +1,28 @@
+{
+  "summary": "Iter31 verified the exam-root scroll bug fix for VERY long questions. Seeded a 5-question published tryout (TEST_IT31_LONG_5a276a, id=495ae50e88544cda9a98d5d715d7960b, tab_warning_limit=0) containing one each of single/multiple/truefalse/truefalse_multi/essay with ~3200-char text. Playwright script forced the inner <main data-testid=exam-question> to scrollTop=99999 then clicked every option on each question. On every viewport (desktop 1920x1080, tablet 768x1024, mobile 390x844): exam-root.scrollTop stayed 0, window.scrollY stayed 0, ExamHeader (top=0, bottom=56) remained fully visible, exam-palette visible on desktop (hidden by hidden-lg on tablet/mobile per responsive design — expected). Inner question panel retained its scroll position (e.g. mainTop=988 on desktop after click, 2320 on mobile) — users can scroll back up. Prev/next question navigation still resets main scroll to 0. Keyboard ArrowDown through radios did not shift layout. Essay typing did not shift layout. All 5 question types validated. 0 assertion failures.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/seed_long_tryout.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "TryoutEngine onScroll={...scrollTo(0,0)} + useExamLockdown window scroll reset provide double safety net; good defense in depth. The real fix (optCls label 'relative' + <main> 'relative') makes the sr-only radio input's containing block the question panel instead of the fixed exam-root, which is the correct Radix pattern.",
+    "Minor: In TryoutEngine the <main className=\"relative flex-1 ...\"> comment could note why `relative` is required (anchoring sr-only radios); otherwise a future refactor may remove it and reintroduce this bug.",
+    "truefalse_multi (TfMultiAnswer) renders inside AnswerArea but its internal radios were not detected by button[role=radio] selector in the question panel; this is testability-only (works for users) but adding data-testid on each tf-multi row choice would help future automation."
+  ],
+  "updated_files": [
+    "/app/tests/seed_long_tryout.py"
+  ],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "test_credentials": "admin@lms.id/Admin@12345, siswa@lms.id/Siswa@12345",
+  "seed_data_creation": "Admin-seeded tryout TEST_IT31_LONG_5a276a (id 495ae50e88544cda9a98d5d715d7960b) with 5 long questions, tab_warning_limit=0, published, price=0. Not cleaned up (TEST_ prefix) so main agent/next tester can re-run visually.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Seed script at /app/tests/seed_long_tryout.py creates a scroll-stress tryout. Use /student/exam/<tryout_id> as the exam route (NOT /student/tryouts/<id>/exam). To check for the scroll bug regression, after any UI change to ExamParts.jsx (optCls) or TryoutEngine.js (<main> className / exam-root onScroll), re-run the iter31 playwright flow and verify exam-root.scrollTop===0 after option clicks on long questions.",
+  "rca of the issue": "Original bug: Radix RadioGroupItem uses sr-only (position:absolute) inside a <label>. If no ancestor is positioned, the absolute element's containing block walks up to the first positioned/fixed ancestor — in this case the <div data-testid=exam-root> which is `fixed inset-0 overflow-hidden`. Clicking the label focuses the sr-only input; the browser then scrolls the nearest scrollable ancestor to bring the focused input into view. Because exam-root has overflow-hidden it CAN be scrolled programmatically but the user cannot scroll it back, so the ExamHeader was pushed above the viewport and the empty area appeared below the content. Fix verified: optCls label now includes `relative` and the scrollable <main data-testid=exam-question> is also `relative`, so the sr-only input's containing block is the label itself — focusing it causes zero scroll on exam-root. Belt-and-suspenders: TryoutEngine's onScroll resets exam-root scrollTop to 0, and useExamLockdown resets window scroll — both still work (verified mainTop remains non-zero while rootTop stays 0, proving the inner panel scrolls freely while the outer stays pinned)."
+}
