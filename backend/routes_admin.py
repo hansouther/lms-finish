@@ -1172,19 +1172,48 @@ async def import_questions(tryout_id: str, file: UploadFile = File(...), user: d
     return {"imported": imported, "errors": errors}
 
 
+_TPL_HEADERS = ["type", "text", "option_a", "option_b", "option_c", "option_d", "option_e", "correct", "points",
+                "competency", "tingkat", "bidang", "materi", "pembahasan", "gambar", "label_benar", "label_salah"]
+_TPL_SAMPLES = [
+    {"type": "single", "text": "Berapa hasil 2+2?", "option_a": "3", "option_b": "4", "option_c": "5", "option_d": "6",
+     "correct": "B", "points": 10, "competency": "numerasi", "tingkat": "mudah", "bidang": "Matematika", "materi": "Bilangan",
+     "pembahasan": "2 + 2 = 4, jadi jawaban yang tepat adalah B."},
+    {"type": "single", "text": r"Hasil dari $\frac{1}{2} + \frac{1}{3}$ adalah ...", "option_a": r"$\frac{5}{6}$",
+     "option_b": r"$\frac{2}{5}$", "option_c": r"$\frac{1}{6}$", "option_d": r"$\frac{3}{5}$", "correct": "A", "points": 10,
+     "competency": "numerasi", "tingkat": "sedang", "bidang": "Matematika", "materi": "Pecahan",
+     "pembahasan": r"Samakan penyebut: $\frac{1}{2} + \frac{1}{3} = \frac{3}{6} + \frac{2}{6} = \frac{5}{6}$."},
+    {"type": "single", "text": r"Akar-akar dari $$x^2 - 5x + 6 = 0$$ adalah ...", "option_a": r"$x=2$ dan $x=3$",
+     "option_b": r"$x=-2$ dan $x=-3$", "option_c": r"$x=1$ dan $x=6$", "option_d": r"$x=-1$ dan $x=6$", "correct": "A",
+     "points": 10, "competency": "numerasi", "tingkat": "sulit", "bidang": "Matematika", "materi": "Persamaan Kuadrat",
+     "pembahasan": r"Faktorkan: $(x-2)(x-3)=0$, sehingga $x=2$ atau $x=3$."},
+    {"type": "single", "text": "Perhatikan gambar. Luas segitiga tersebut adalah ...", "option_a": r"$12\text{ cm}^2$",
+     "option_b": r"$24\text{ cm}^2$", "option_c": r"$6\text{ cm}^2$", "option_d": r"$18\text{ cm}^2$", "correct": "A",
+     "points": 10, "competency": "numerasi", "tingkat": "sedang", "bidang": "Matematika", "materi": "Bangun Datar",
+     "pembahasan": r"Luas segitiga $= \frac{1}{2} \times alas \times tinggi = \frac{1}{2} \times 6 \times 4 = 12\text{ cm}^2$.",
+     "gambar": "segitiga.png"},
+    {"type": "multiple", "text": "Pilih bilangan genap", "option_a": "2", "option_b": "3", "option_c": "4", "option_d": "5",
+     "correct": "A;C", "points": 10, "competency": "numerasi", "tingkat": "sedang", "bidang": "Matematika", "materi": "Bilangan",
+     "pembahasan": "Bilangan genap habis dibagi 2: yaitu 2 dan 4."},
+    {"type": "truefalse", "text": "Bumi berbentuk bulat", "correct": "benar", "points": 10, "competency": "literasi",
+     "tingkat": "mudah", "bidang": "IPA", "materi": "Tata Surya", "pembahasan": "Bumi berbentuk bulat (sedikit pepat di kutub)."},
+    {"type": "truefalse_multi", "text": "Bacalah teks berikut. Rani membeli 3 buku seharga Rp5.000 per buku dan membayar Rp20.000. Tentukan benar atau salah setiap pernyataan.",
+     "option_a": "Total harga buku Rp15.000", "option_b": "Uang kembalian Rp10.000", "option_c": "Jika membeli 4 buku uangnya pas",
+     "correct": "B;S;B", "points": 15, "competency": "numerasi", "tingkat": "sedang", "bidang": "Matematika", "materi": "Aritmetika Sosial",
+     "pembahasan": "3 x Rp5.000 = Rp15.000 (benar). Kembalian Rp20.000 - Rp15.000 = Rp5.000 (salah). 4 x Rp5.000 = Rp20.000 (benar).",
+     "label_benar": "Sesuai", "label_salah": "Tidak Sesuai"},
+    {"type": "essay", "text": "Ibu kota Indonesia?", "correct": "jakarta|dki jakarta", "points": 10, "competency": "literasi",
+     "tingkat": "sulit", "bidang": "IPS", "materi": "Geografi Indonesia", "pembahasan": "Ibu kota Indonesia adalah Jakarta (DKI Jakarta)."},
+]
+
+
 @router.get("/questions/template")
 async def questions_template(user: dict = Depends(admin_only)):
-    csv_text = (
-        "type,text,option_a,option_b,option_c,option_d,correct,points,competency,tingkat,gambar,label_benar,label_salah\n"
-        "single,\"Berapa hasil 2+2?\",3,4,5,6,B,10,numerasi,mudah,,,\n"
-        "single,\"Hasil dari $\\frac{1}{2} + \\frac{1}{3}$ adalah ...\",$\\frac{5}{6}$,$\\frac{2}{5}$,$\\frac{1}{6}$,$\\frac{3}{5}$,A,10,numerasi,sedang,,,\n"
-        "multiple,\"Pilih bilangan genap\",2,3,4,5,\"A;C\",10,numerasi,sedang,,,\n"
-        "single,\"Perhatikan gambar. Luas segitiga tersebut adalah ...\",$12\\text{ cm}^2$,$24\\text{ cm}^2$,$6\\text{ cm}^2$,$18\\text{ cm}^2$,A,10,numerasi,sedang,segitiga.png,,\n"
-        "truefalse,\"Bumi berbentuk bulat\",,,,,benar,10,literasi,mudah,,,\n"
-        "truefalse_multi,\"Bacalah teks berikut. Rani membeli 3 buku seharga Rp5.000 per buku dan membayar Rp20.000. Tentukan benar atau salah pernyataan berikut.\",Total harga buku Rp15.000,Uang kembalian Rp10.000,Jika membeli 4 buku uangnya pas,,\"B;S;B\",15,numerasi,sedang,,Sesuai,Tidak Sesuai\n"
-        "essay,\"Ibu kota Indonesia?\",,,,,\"jakarta|dki jakarta\",10,literasi,sulit,,,\n"
-    )
-    return Response(content=csv_text, media_type="text/csv",
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=_TPL_HEADERS, extrasaction="ignore")
+    w.writeheader()
+    for row in _TPL_SAMPLES:
+        w.writerow(row)
+    return Response(content="\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": "attachment; filename=template_soal.csv"})
 
 
@@ -1194,22 +1223,9 @@ async def questions_template_xlsx(user: dict = Depends(admin_only)):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Soal"
-    headers = ["type", "text", "option_a", "option_b", "option_c", "option_d",
-               "option_e", "correct", "points", "competency", "tingkat", "gambar", "label_benar", "label_salah"]
-    ws.append(headers)
-    samples = [
-        ["single", "Berapa hasil 2+2?", "3", "4", "5", "6", "", "B", 10, "numerasi", "mudah", ""],
-        ["single", r"Hasil dari $\frac{1}{2} + \frac{1}{3}$ adalah ...", r"$\frac{5}{6}$", r"$\frac{2}{5}$", r"$\frac{1}{6}$", r"$\frac{3}{5}$", "", "A", 10, "numerasi", "sedang", ""],
-        ["single", r"Akar-akar dari $$x^2 - 5x + 6 = 0$$ adalah ...", r"$x=2$ dan $x=3$", r"$x=-2$ dan $x=-3$", r"$x=1$ dan $x=6$", r"$x=-1$ dan $x=6$", "", "A", 10, "numerasi", "sulit", ""],
-        ["single", "Perhatikan gambar. Luas segitiga tersebut adalah ...", r"$12\text{ cm}^2$", r"$24\text{ cm}^2$", r"$6\text{ cm}^2$", r"$18\text{ cm}^2$", "", "A", 10, "numerasi", "sedang", "segitiga.png"],
-        ["multiple", "Pilih bilangan genap", "2", "3", "4", "5", "", "A;C", 10, "numerasi", "sedang", ""],
-        ["truefalse", "Bumi berbentuk bulat", "", "", "", "", "", "benar", 10, "literasi", "mudah", ""],
-        ["truefalse_multi", "Bacalah teks berikut. Rani membeli 3 buku seharga Rp5.000 per buku dan membayar Rp20.000. Tentukan benar atau salah setiap pernyataan.", "Total harga buku Rp15.000", "Uang kembalian Rp10.000", "Jika membeli 4 buku uangnya pas", "", "", "B;S;B", 15, "numerasi", "sedang", "", "Sesuai", "Tidak Sesuai"],
-        ["truefalse_multi", r"Diketahui $f(x) = 2x + 3$. Tentukan benar/salah pernyataan berikut.", r"$f(1) = 5$", r"$f(0) = 2$", r"$f(-1) = 1$", "", "", "B;S;B", 15, "numerasi", "sulit", "", "", ""],
-        ["essay", "Ibu kota Indonesia?", "", "", "", "", "", "jakarta|dki jakarta", 10, "literasi", "sulit", ""],
-    ]
-    for row in samples:
-        ws.append(row)
+    ws.append(_TPL_HEADERS)
+    for row in _TPL_SAMPLES:
+        ws.append([row.get(h, "") for h in _TPL_HEADERS])
     for col in ws.columns:
         width = max((len(str(c.value)) if c.value is not None else 0) for c in col) + 2
         ws.column_dimensions[col[0].column_letter].width = min(max(width, 10), 48)
@@ -1228,6 +1244,9 @@ async def questions_template_xlsx(user: dict = Depends(admin_only)):
         ["points", "Poin/bobot soal (angka)"],
         ["competency", "numerasi | literasi | umum (untuk laporan AKM)"],
         ["tingkat", "Tingkat kesulitan IRT: mudah | sedang | sulit"],
+        ["bidang", "OPSIONAL. Bidang / mata pelajaran soal (mis. Matematika). Kosong = otomatis mata pelajaran Try Out tujuan impor."],
+        ["materi", "OPSIONAL. Materi / topik soal (mis. Pecahan, Aljabar). Dipakai untuk filter Bank Soal."],
+        ["pembahasan", "OPSIONAL. Penjelasan lengkap jawaban, tampil ke siswa jika admin membuka pembahasan. Mendukung rumus $...$."],
         ["gambar", "OPSIONAL. Isi nama file gambar (mis. segitiga.png) lalu unggah ZIP berisi file Excel ini + semua gambarnya. Bisa juga diisi link https://... Kosongkan bila soal tanpa gambar."],
         [""],
         ["Rumus Matematika (LaTeX)", "Tulis rumus di antara tanda $...$ (sebaris) atau $$...$$ (baris sendiri). Berlaku di kolom text & option."],

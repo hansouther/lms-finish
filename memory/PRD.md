@@ -34,3 +34,5 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - Saklar `show_review` per Try Out (form + tombol cepat "Buka Pembahasan", PUT /admin/tryouts/{id}/review); tertutup = siswa hanya lihat nilai 0–100 & IRT (per_question/answers tidak dikirim). Latihan (exercise) selalu terbuka
 - Nilai 0–100 = poin/maks*100, 2 desimal format id-ID (formatNilai)
 - Penyelarasan IRT (irt.align_scores, PAVA): nilai asli lebih tinggi tidak pernah dapat IRT lebih rendah; 100 = maks skala, 0 = min; `irt_raw` menyimpan skor asli; dijalankan saat submit, paksa kumpul, reset, ganti skala, kalibrasi
+## Iteration 8 (Jun 2026)
+- Template CSV & Excel kini berisi kolom bidang, materi, pembahasan (+ option_e di CSV), contoh terisi & petunjuk; CSV ber-BOM UTF-8 agar rapi di Excel
