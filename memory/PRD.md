@@ -40,3 +40,7 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - Pratinjau impor: POST /admin/questions/import/preview -> tabel status per baris, edit/hapus baris, POST /admin/questions/import/validate, impor baris valid via POST /admin/tryouts/{id}/questions/import-rows (gambar ZIP diunggah saat pratinjau)
 - Ekspor bank soal Excel sesuai filter: GET /admin/question-bank/export (format template + sumber_tryout, bisa diimpor ulang)
 - Kolom template `gambar_pembahasan` -> explanation_image_url
+## Iteration 10 (Jun 2026)
+- Duplikat soal (kunci = teks + pilihan dinormalisasi): impor (preview/validate/import-rows/import) melewati soal yang sudah ada di Try Out tujuan atau berulang di berkas + notifikasi
+- Kolom wajib template: type,text,option_a..e,correct,points,competency,tingkat (400 bila header hilang; points/competency/tingkat wajib valid per baris); header wajib berwarna di Excel + petunjuk WAJIB/OPSIONAL
+- Cek Duplikat Soal (ManageTryouts): GET /admin/question-bank/duplicates, rapikan otomatis (sisakan 1 per Try Out), POST /admin/questions/bulk-delete

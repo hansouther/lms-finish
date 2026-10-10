@@ -1,0 +1,27 @@
+{
+  "summary": "Iter27 (Hapus Duplikat Soal + Impor dengan deteksi duplikat + kolom wajib ketat): Backend 12/12 pytest pass, UI flows for both DuplicateDialog and TryoutBuilder import preview verified end-to-end. Preview/validate endpoints correctly mark within-file duplicates ('Sama dengan baris N') and existing-in-tryout duplicates ('sudah ada'), counted in 'duplicates' not 'invalid' (ok=false, error=None). import-rows and legacy /questions/import skip duplicates and return a duplicates list. Missing required column -> 400 'Kolom wajib tidak ada di berkas: option_e'. Empty points/competency/tingkat -> per-row error. Template XLSX required headers have blue fill (0E7490) and Petunjuk sheet contains WAJIB/OPSIONAL/Duplikat rows. GET /admin/question-bank/duplicates groups by _dup_key, computes same_tryout flag, includes tryout_title/has_explanation/tryout_has_results. POST /admin/questions/bulk-delete deletes selected ids; empty list -> 400. UI DuplicateDialog opens from ManageTryouts open-duplicates, shows dup-total, dup-same-tryout chip, dup-group-{i}, dup-check-{id}; dup-auto-pick selects extras (keeps 1 per tryout); dup-delete -> ConfirmButton 'Hapus' triggers bulk-delete and reload. ImportPreviewDialog shows import-duplicate-count chip and purple duplicate status rows.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter27_duplicates_import.py",
+    "/app/test_reports/pytest/iter27.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "_dup_key normalises whitespace+case for text and sorts option texts — robust canonical key for cross-tryout duplicate detection.",
+    "_preview_payload separates duplicates from invalid (dup rows have ok=false but error=None) matching UX spec; counts valid/invalid/duplicates independently.",
+    "_insert_rows re-checks existing keys at insert-time (not relying on preview) so race-safe when two admins import simultaneously; also prevents within-batch repeats via existing.add(k).",
+    "question_duplicates endpoint is O(N) over all questions and uses a single $in aggregate for attempts — scales fine up to the 50k limit; consider pagination later.",
+    "Template xlsx: required columns filled 0E7490 (teal) and optional E2E8F0 (gray) — matches design intent and renders correctly in openpyxl load.",
+    "DuplicateDialog.extrasOf preferentially keeps the item with has_explanation per tryout — matches spec 'prefer one with pembahasan'.",
+    "ImportPreviewDialog shows duplicate chip only when data.duplicates > 0 (conditional render) — clean UI when no duplicates.",
+    "No ObjectId leakage: question_duplicates projection excludes _id."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter27_duplicates_import.py", "/app/test_reports/iteration_27.json"],
+  "success_rate": {"backend": "100% (12/12)", "frontend": "100% of flows (duplicate dialog + import preview duplicate marking)"},
+  "test_credentials": "admin@lms.id / Admin@12345",
+  "seed_data_creation": "Backend tests create TEST_ITER27_DUP and TEST_ITER27_DUP2 standalone tryouts (cleaned up via fixtures/finally). UI test creates TEST_ITER27_UI tryout with 2 identical questions, cleans up after.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iter27 fully verified. Key endpoints: POST /api/admin/questions/import/preview?tryout_id=, POST /api/admin/questions/import/validate?tryout_id=, POST /api/admin/tryouts/{id}/questions/import-rows, legacy POST /api/admin/tryouts/{id}/questions/import, GET /api/admin/question-bank/duplicates, POST /api/admin/questions/bulk-delete. UI selectors: open-duplicates, duplicate-dialog, dup-total, dup-same-tryout, dup-auto-pick, dup-group-{i}, dup-check-{id}, dup-delete + AlertDialog 'Hapus'. ImportPreviewDialog adds import-duplicate-count chip. Note: manual POST /admin/tryouts/{id}/questions still allows exact-text duplicates (by design, per agent-to-agent note), so UI tests use that path to seed duplicate pairs."
+}
