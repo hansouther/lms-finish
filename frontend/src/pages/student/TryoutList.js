@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { enterFullscreen } from "@/lib/fullscreen";
 import { formatRupiah, formatDateTime, formatNilai } from "@/lib/format";
 import { payItem } from "@/lib/midtrans";
+import InstallAppBanner from "@/components/common/InstallAppBanner";
 
 const STATUS = {
   submitted: { label: "Selesai", color: "#10B981", bg: "#ECFDF5" },
@@ -24,6 +25,7 @@ export default function TryoutList() {
   return (
     <div data-testid="tryout-list">
       <PageHeader title="CBT / Try Out" subtitle="Kerjakan Try Out dan latihan soal dengan penilaian otomatis (pilihan ganda, kompleks, benar/salah, & esai)." />
+      <InstallAppBanner />
 
       {loading ? <Loading /> : !data?.length ? (
         <Empty icon={ClipboardList} title="Belum ada Try Out" desc="Paket soal yang dirilis admin akan muncul di sini." />

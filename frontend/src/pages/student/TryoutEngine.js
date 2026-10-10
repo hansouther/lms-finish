@@ -10,10 +10,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import MathText, { QuestionImage } from "@/components/common/MathText";
-import { ExamHeader, AnswerArea, Palette, FlagButton, FullscreenGate, NoFullscreenNotice, PseudoFullscreenGate, TYPE_LABEL } from "@/components/exam/ExamParts";
+import { ExamHeader, AnswerArea, Palette, FlagButton, FullscreenGate, NoFullscreenNotice, PseudoFullscreenGate, SplitScreenOverlay, TYPE_LABEL } from "@/components/exam/ExamParts";
 import { toast } from "sonner";
 import useTabGuard from "@/hooks/useTabGuard";
 import useExamLockdown from "@/hooks/useExamLockdown";
+import useSplitScreenGuard from "@/hooks/useSplitScreenGuard";
 import { isIOS, isInAppBrowser } from "@/lib/fullscreen";
 import { stopAlarm } from "@/lib/alarm";
 import { enterFullscreen, exitFullscreen, fsElement, fsSupported, isStandalone, onFullscreenChange, keepScreenOn } from "@/lib/fullscreen";
@@ -41,6 +42,7 @@ export default function TryoutEngine() {
   const [fsBusy, setFsBusy] = useState(false);
   const [fsFailed, setFsFailed] = useState(false);
   const [pseudoReady, setPseudoReady] = useState(false);
+  const lastViolationRef = useRef(0);
   const answersRef = useRef({});
   answersRef.current = answers;
   const scrollRef = useRef(null);
@@ -146,8 +148,10 @@ export default function TryoutEngine() {
   const MAX_VIOLATIONS = tryout?.tab_warning_limit ?? 0;
   const needFs = MAX_VIOLATIONS > 0 && fsSupported() && !isStandalone() && !fsFailed;
 
-  useTabGuard(!!attemptId && MAX_VIOLATIONS > 0, async () => {
+  const reportViolation = async () => {
     if (submittedRef.current) return stopAlarm();
+    if (Date.now() - lastViolationRef.current < 2500) return;
+    lastViolationRef.current = Date.now();
     try {
       const { data } = await api.post(`/student/attempts/${attemptId}/violation`, { answers: answersRef.current });
       if (data.auto_submitted) {
@@ -162,7 +166,9 @@ export default function TryoutEngine() {
       setViolations((v) => Math.min(v + 1, MAX_VIOLATIONS - 1));
     }
     setWarnOpen(true);
-  }, { ignoreRef: submittedRef, watchFullscreen: needFs });
+  };
+  useTabGuard(!!attemptId && MAX_VIOLATIONS > 0, reportViolation, { ignoreRef: submittedRef, watchFullscreen: needFs });
+  const splitActive = useSplitScreenGuard(!!attemptId && MAX_VIOLATIONS > 0, reportViolation, { ignoreRef: submittedRef });
   useExamLockdown(!!attemptId && MAX_VIOLATIONS > 0);
   const startPseudo = () => { setPseudoReady(true); window.scrollTo(0, 0); };
 
@@ -253,7 +259,8 @@ export default function TryoutEngine() {
         </SheetContent>
       </Sheet>
 
-      {MAX_VIOLATIONS > 0 && !needFs && !pseudoReady && !warnOpen && !submitting && <PseudoFullscreenGate max={MAX_VIOLATIONS} ios={isIOS()} inApp={isInAppBrowser()} onStart={startPseudo} />}
+      {MAX_VIOLATIONS > 0 && !needFs && !pseudoReady && !warnOpen && !submitting && <PseudoFullscreenGate max={MAX_VIOLATIONS} ios={isIOS()} inApp={isInAppBrowser()} standalone={isStandalone()} onStart={startPseudo} />}
+      {splitActive && !warnOpen && !submitting && <SplitScreenOverlay />}
       {needFs && !isFs && !warnOpen && !submitting && <FullscreenGate max={MAX_VIOLATIONS} onEnter={goFullscreen} busy={fsBusy} />}
 
       <AlertDialog open={warnOpen}>
@@ -262,7 +269,7 @@ export default function TryoutEngine() {
             <AlertDialogTitle className="flex items-center gap-2 text-red-600 text-left"><ShieldAlert className="h-5 w-5 shrink-0" /> Peringatan {violations} dari {MAX_VIOLATIONS}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-sm text-[#475569] text-left">
-                <p>Sistem mendeteksi Anda keluar dari layar penuh atau berpindah tab/aplikasi. Tindakan ini tercatat dan dapat dilihat oleh admin.</p>
+                <p>Sistem mendeteksi Anda keluar dari layar penuh, berpindah tab/aplikasi, atau membuka layar terbagi/jendela mengambang. Tindakan ini tercatat dan dapat dilihat oleh admin.</p>
                 <p className="font-semibold text-red-600" data-testid="tab-warning-remaining">
                   {MAX_VIOLATIONS - violations > 1 ? `Sisa ${MAX_VIOLATIONS - violations - 1} peringatan lagi. ` : "Ini peringatan terakhir. "}
                   Jika melanggar {MAX_VIOLATIONS} kali, Try Out otomatis diselesaikan & dikumpulkan.

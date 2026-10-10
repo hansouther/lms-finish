@@ -5,6 +5,9 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import "katex/dist/katex.min.css";
 import "@/index.css";
 import App from "@/App";
+import { initPwa } from "@/lib/pwa";
+
+initPwa();
 
 const queryClient = new QueryClient({
   defaultOptions: {
