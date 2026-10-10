@@ -6,6 +6,7 @@ import { Loading, Empty } from "@/components/common/States";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDate } from "@/lib/format";
+import { fileUrl } from "@/lib/media";
 
 export default function LearningRoom() {
   const { data, loading } = useFetch("/student/materials");
@@ -55,7 +56,7 @@ export default function LearningRoom() {
           <div className="text-sm text-[#475569] space-y-3">
             <p className="text-[#0A1128]">{open?.description}</p>
             <div className="rounded-lg bg-[#EFF6F8] p-4 whitespace-pre-wrap">{open?.content || "Konten materi tidak tersedia."}</div>
-            {open?.file_url && <a href={open.file_url} target="_blank" rel="noreferrer" className="text-[#0E7490] font-semibold hover:underline">Buka lampiran</a>}
+            {open?.file_url && <a href={fileUrl(open.file_url)} target="_blank" rel="noreferrer" className="text-[#0E7490] font-semibold hover:underline">Buka lampiran</a>}
             <p className="text-xs text-[#94A3B8]">Oleh {open?.tutor_name} · {formatDate(open?.created_at)}</p>
           </div>
         </DialogContent>

@@ -1,8 +1,11 @@
-import api, { cleanBaseUrl as BACKEND } from "@/lib/api";
+import api, { cleanBaseUrl as BACKEND, getAccessToken } from "@/lib/api";
 
 export function fileUrl(path) {
   if (!path) return "";
-  return path.startsWith("http") ? path : `${BACKEND}${path}`;
+  const url = path.startsWith("http") ? path : `${BACKEND}${path}`;
+  const token = getAccessToken();
+  if (!token || !url.startsWith(BACKEND) || !url.includes("/api/files/") || /[?&]token=/.test(url)) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}token=${encodeURIComponent(token)}`;
 }
 
 export function youtubeEmbed(url) {

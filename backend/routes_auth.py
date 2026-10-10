@@ -66,6 +66,7 @@ async def _issue_session(user: dict, response: Response):
     access = create_access_token(user["id"], user["role"])
     refresh = create_refresh_token(user["id"])
     set_auth_cookies(response, access, refresh)
+    return {"access_token": access, "refresh_token": refresh}
 
 
 @router.post("/register")
@@ -89,8 +90,8 @@ async def register(body: RegisterBody, response: Response):
         "created_at": now_iso(),
     }
     await db.users.insert_one(user)
-    await _issue_session(user, response)
-    return _public_user({k: v for k, v in user.items() if k != "_id"})
+    tokens = await _issue_session(user, response)
+    return {**_public_user({k: v for k, v in user.items() if k != "_id"}), **tokens}
 
 
 @router.post("/register/proctor")
@@ -113,8 +114,8 @@ async def register_proctor(body: RegisterProctorBody, response: Response):
         "created_at": now_iso(),
     }
     await db.users.insert_one(user)
-    await _issue_session(user, response)
-    return _public_user({k: v for k, v in user.items() if k != "_id"})
+    tokens = await _issue_session(user, response)
+    return {**_public_user({k: v for k, v in user.items() if k != "_id"}), **tokens}
 
 
 @router.post("/register/tutor")
@@ -138,8 +139,8 @@ async def register_tutor(body: RegisterTutorBody, response: Response):
         "created_at": now_iso(),
     }
     await db.users.insert_one(user)
-    await _issue_session(user, response)
-    return _public_user({k: v for k, v in user.items() if k != "_id"})
+    tokens = await _issue_session(user, response)
+    return {**_public_user({k: v for k, v in user.items() if k != "_id"}), **tokens}
 
 
 @router.post("/become-tutor")
@@ -201,8 +202,8 @@ async def login(body: LoginBody, request: Request, response: Response):
         raise HTTPException(status_code=401, detail="Email atau kata sandi salah")
 
     await db.login_attempts.delete_one({"identifier": identifier})
-    await _issue_session(user, response)
-    return _public_user({k: v for k, v in user.items() if k != "_id"})
+    tokens = await _issue_session(user, response)
+    return {**_public_user({k: v for k, v in user.items() if k != "_id"}), **tokens}
 
 
 @router.post("/google/session")
@@ -249,13 +250,13 @@ async def google_session(body: GoogleBody, response: Response):
             await db.users.update_one({"id": user["id"]}, {"$set": {"picture": picture}})
             user["picture"] = picture
             
-    await _issue_session(user, response)
-    return _public_user({k: v for k, v in user.items() if k != "_id"})
+    tokens = await _issue_session(user, response)
+    return {**_public_user({k: v for k, v in user.items() if k != "_id"}), **tokens}
 
 
 @router.post("/refresh")
 async def refresh(request: Request, response: Response):
-    token = request.cookies.get("refresh_token")
+    token = request.cookies.get("refresh_token") or request.headers.get("X-Refresh-Token")
     if not token:
         raise HTTPException(status_code=401, detail="Tidak ada refresh token")
     try:
@@ -270,7 +271,7 @@ async def refresh(request: Request, response: Response):
     access = create_access_token(user["id"], user["role"])
     response.set_cookie("access_token", access, httponly=True, secure=True,
                         samesite="none", max_age=86400, path="/")
-    return {"ok": True}
+    return {"ok": True, "access_token": access}
 
 
 @router.post("/logout")

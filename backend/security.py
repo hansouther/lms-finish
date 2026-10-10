@@ -59,11 +59,12 @@ def clear_auth_cookies(response):
 
 
 def _extract_token(request: Request):
-    token = request.cookies.get("access_token")
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header[7:] if auth_header.startswith("Bearer ") else None
     if not token:
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer "):
-            token = auth_header[7:]
+        token = request.cookies.get("access_token")
+    if not token:
+        token = request.query_params.get("token")
     return token
 
 

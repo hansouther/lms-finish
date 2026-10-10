@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import api from "@/lib/api";
+import api, { clearTokens } from "@/lib/api";
 
 const AuthContext = createContext(null);
 
@@ -35,6 +35,7 @@ export function AuthProvider({ children }) {
     } catch {
       /* ignore */
     }
+    clearTokens();
     setUser(false);
   };
 
