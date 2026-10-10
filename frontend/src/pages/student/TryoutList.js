@@ -5,6 +5,7 @@ import useFetch from "@/hooks/useFetch";
 import PageHeader from "@/components/common/PageHeader";
 import { Loading, Empty } from "@/components/common/States";
 import { Button } from "@/components/ui/button";
+import { enterFullscreen } from "@/lib/fullscreen";
 import { formatRupiah, formatDateTime, formatNilai } from "@/lib/format";
 import { payItem } from "@/lib/midtrans";
 
@@ -61,7 +62,7 @@ export default function TryoutList() {
                       {busy === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />} Beli Akses · {formatRupiah(t.price)}
                     </Button>
                   ) : (
-                    <Button className="w-full rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" onClick={() => navigate(`/student/exam/${t.id}`)} data-testid={`start-tryout-${t.id}`}>
+                    <Button className="w-full rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" onClick={() => { if ((t.tab_warning_limit ?? 5) > 0) enterFullscreen(); navigate(`/student/exam/${t.id}`); }} data-testid={`start-tryout-${t.id}`}>
                       <PlayCircle className="h-4 w-4" /> {t.attempt_status === "in_progress" ? "Lanjutkan" : t.retake_granted ? "Ulangi (izin admin)" : "Mulai Kerjakan"}
                     </Button>
                   )}

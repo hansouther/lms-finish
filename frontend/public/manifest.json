@@ -1,0 +1,9 @@
+{
+  "name": "Binara LMS",
+  "short_name": "Binara",
+  "start_url": "/",
+  "display": "fullscreen",
+  "background_color": "#0A1128",
+  "theme_color": "#0E7490",
+  "orientation": "any"
+}

@@ -15,19 +15,19 @@ export function TfMultiAnswer({ q, value, onChange }) {
           <tr>
             <th className="w-10 px-3 py-2.5 text-left font-semibold">No</th>
             <th className="px-3 py-2.5 text-left font-semibold">Pernyataan</th>
-            <th className="w-28 px-2 py-2.5 text-center font-semibold">{lt}</th>
-            <th className="w-28 px-2 py-2.5 text-center font-semibold">{lf}</th>
+            <th className="w-16 sm:w-28 px-1 sm:px-2 py-2.5 text-center font-semibold text-xs sm:text-sm break-words">{lt}</th>
+            <th className="w-16 sm:w-28 px-1 sm:px-2 py-2.5 text-center font-semibold text-xs sm:text-sm break-words">{lf}</th>
           </tr>
         </thead>
         <tbody>
           {q.options.map((s, i) => (
             <tr key={s.id} className={`border-t border-[#E2E8F0] transition-colors duration-200 ${map[s.id] ? "bg-[#F0F9FB]" : ""}`} data-testid={`tf-row-${s.id}`}>
               <td className="px-3 py-3 font-mono2 text-xs text-[#94A3B8]">{i + 1}</td>
-              <td className="px-3 py-3"><MathText text={s.text} className="text-[#0A1128]" /></td>
+              <td className="px-2 sm:px-3 py-3 break-words"><MathText text={s.text} className="text-[#0A1128]" /></td>
               {["true", "false"].map((v) => (
                 <td key={v} className="px-2 py-3 text-center">
                   <button type="button" onClick={() => pick(s.id, v)} aria-label={v === "true" ? lt : lf} data-testid={`tf-pick-${v}-${s.id}`}
-                    className={`mx-auto flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors duration-200 ${map[s.id] === v ? "border-[#0E7490] bg-[#0E7490]" : "border-[#CBD5E1] hover:border-[#0E7490]"}`}>
+                    className={`mx-auto flex h-8 w-8 sm:h-6 sm:w-6 items-center justify-center rounded-full border-2 transition-colors duration-200 ${map[s.id] === v ? "border-[#0E7490] bg-[#0E7490]" : "border-[#CBD5E1] hover:border-[#0E7490]"}`}>
                     {map[s.id] === v && <span className="h-2 w-2 rounded-full bg-white" />}
                   </button>
                 </td>
