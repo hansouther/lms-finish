@@ -1,0 +1,31 @@
+{
+  "summary": "Iteration 22: Admin-controlled Try Out session (schedule + monitor + reset/retake). Backend: 9/9 pytest cases pass covering schedule_status in admin+student lists, upcoming/closed enforcement (403 on detail+start), autosave progress (saved_at), timer computed from server (reload does not reset timer), monitor endpoint (summary/rows/server_now + retake_pending row after reset), reset creates retake grant and causes stale progress PUT to return 404, retake bypasses closed schedule, cancel_retake removes grant, force_submit grades saved answers. Frontend (Playwright on preview URL): admin ManageTryouts shows tryout-schedule-fields with tryout-start-at/tryout-end-at datetime-local; saving end<=start shows validation feedback; monitor-{id} 'Pantau Peserta' button present on 3 cards and navigates to /admin/tryouts/{id}/monitor which renders tryout-monitor with stat-in-progress, stat-expired, stat-retake, stat-submitted, monitor-refresh. Student /student/tryouts shows tryout-schedule-{id} 'Try Out sudah ditutup' block for closed tryout (to_1/to_2). Starting to_3 (open) renders TryoutEngine: exam-timer shows 29:57, selecting an option triggers autosave with exam-save-status 'Tersimpan di server 06.43.20'; after full page reload, timer continues at 29:49 (NOT reset to 30:00) and selected answer persists -> confirms server-driven timer + answer persistence from PUT /api/student/attempts/{id}/progress.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin TryoutMonitor header", "issues": ["data-testid='monitor-schedule' element may be rendered conditionally; was not found on the monitored tryout page when no start_at/end_at was set (minor; stats + refresh work)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter22_tryout_session.py",
+    "/app/test_reports/pytest/iter22.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "tryout_session.remaining_seconds correctly caps left by (end-now) only when not bypass_schedule; retake attempts correctly ignore the end bound and receive the full fresh duration. Verified via test_retake_bypasses_closed_schedule.",
+    "routes_student.save_progress returns 409 when attempt status != in_progress and 404 when attempt deleted (reset path): both allowed by UI so client can redirect+toast. Good.",
+    "routes_admin.reset_attempt deletes ALL attempts (including submitted) for that student+tryout then creates a retake grant; _recalibrate_tryout is scheduled only if the reset attempt was submitted. OK.",
+    "routes_admin.list_tryouts filters kind!=exercise; exercises not affected by schedule (confirmed by code path and schedule_status not evaluated on exercise in student start_attempt).",
+    "routes_student.start_attempt returns existing in_progress attempt (preserves started_at) so timer never resets on page reload. Confirmed in UI test (29:57 -> 29:49)."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter22_tryout_session.py"],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "100% of critical flows (schedule UI + autosave + server timer + monitor stats)"},
+  "test_credentials": "admin@lms.id / Admin@12345 (from backend/.env ADMIN_PASSWORD); siswa@lms.id / Siswa@12345",
+  "seed_data_creation": "Each test creates its own TEST_TRYOUT_* tryout and deletes it in finally. No persistent seed data left over. to_3 schedule was NOT modified by UI test (student only started an attempt on to_3; this attempt may remain in_progress).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "After this iteration, student siswa@lms.id may have an in-progress attempt on tryout to_3 created during UI test (Soal 1 answered '80'). If next test requires a clean slate, admin can reset via POST /api/admin/tryouts/to_3/attempts/{aid}/reset or clear via DELETE on monitor. test_iter22_tryout_session.py is the regression suite for schedule + session control.",
+  "rca of the issue": "N/A - no issues found"
+}

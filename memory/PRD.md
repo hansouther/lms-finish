@@ -14,3 +14,7 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - Rumus matematika KaTeX ($...$, $$...$$, \(..\), \[..\]) di builder (pratinjau), CBT siswa, pembahasan
 ## Iteration 3 (Jun 2026)
 - Tipe soal baru `truefalse_multi` (Benar/Salah Majemuk): 1 stimulus + banyak pernyataan, kunci per pernyataan ("o1:true"), nilai proporsional, label kustom `tf_labels` (juga untuk truefalse biasa), template CSV/XLSX kolom label_benar/label_salah
+## Iteration 4 (Jun 2026)
+- Jadwal Try Out (start_at/end_at) di form admin + ditegakkan backend (403 belum dibuka/ditutup; end tanggal saja = akhir hari)
+- Autosave jawaban ke server (PUT /student/attempts/{id}/progress), timer dari server (remaining_seconds)
+- Halaman admin Pantau Peserta /admin/tryouts/:id/monitor: status, progres, waktu simpan terakhir, sisa waktu; aksi Kumpulkan paksa, Ulangi (hapus data + izin ulang khusus siswa, bypass jadwal), Batalkan izin
