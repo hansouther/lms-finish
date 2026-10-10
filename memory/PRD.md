@@ -18,3 +18,8 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - Jadwal Try Out (start_at/end_at) di form admin + ditegakkan backend (403 belum dibuka/ditutup; end tanggal saja = akhir hari)
 - Autosave jawaban ke server (PUT /student/attempts/{id}/progress), timer dari server (remaining_seconds)
 - Halaman admin Pantau Peserta /admin/tryouts/:id/monitor: status, progres, waktu simpan terakhir, sisa waktu; aksi Kumpulkan paksa, Ulangi (hapus data + izin ulang khusus siswa, bypass jadwal), Batalkan izin
+## Iteration 5 (Jun 2026)
+- Anti-mencontek Try Out (bukan latihan): deteksi pindah/keluar tab (visibilitychange, refresh tidak dihitung), alarm WebAudio, dialog "Selesaikan & Kumpulkan / Tetap Lanjutkan", maks 5 peringatan -> otomatis dikumpulkan server-side (POST /student/attempts/{id}/violation)
+- Total pelanggaran disimpan di koleksi tryout_violations (tetap ada walau admin "Ulangi"); tag "Terindikasi mencontek: Nx keluar tab" di Pantau Peserta & Hasil
+- Opsi per Try Out: shuffle_questions & shuffle_options (acak deterministik per siswa)
+- Bank soal: ambil/salin soal dari Try Out lain (GET /admin/question-bank, POST /admin/tryouts/{id}/questions/copy)

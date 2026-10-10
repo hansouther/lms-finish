@@ -1,0 +1,29 @@
+{
+  "summary": "Iter23 (Try Out anti-cheat + shuffle + question bank): backend pytest 8/8 pass; Playwright UI tests pass end-to-end on preview URL. Verified (a) admin ManageTryouts edit dialog exposes tryout-shuffle-questions & tryout-shuffle-options switches which persist on save (badge tryout-shuffle-{id} on card when flags on, visible after admin API round-trip); (b) GET /api/student/tryouts/{id} returns deterministic shuffled question + option order per student (stable across refresh) when flags on, preserves original order when off; (c) TryoutEngine shows exam-violation-counter '0/5' initially; simulating visibilitychange hidden->visible triggers tab-warning-dialog with correct Indonesian text 'Sisa N peringatan lagi. Jika keluar tab 5 kali ...' and tab-warning-remaining; tab-warning-continue closes dialog; counter increments to 1/5. Full page reload does NOT increment the counter (stays 1/5) - confirmed via UI reload test; (d) 5th violation triggers POST /api/student/attempts/{id}/violation returning auto_submitted=true and client redirects to /student/results/{aid}; (e) admin monitor page renders monitor-cheat-{i} with 'Terindikasi mencontek: 5x keluar tab' + 'Otomatis dikumpulkan'; results page renders result-cheat-{i} with same text and GET /api/admin/tryouts/{tid}/monitor returns tab_violations=5, cheat_total=5, auto_submitted=true; (f) GET /api/admin/question-bank + POST /api/admin/tryouts/{tid}/questions/copy copies selected questions (copied_from set), QuestionBankDialog opens from TryoutBuilder via open-question-bank button; (g) violation endpoint rejects exercise-kind tryouts (400) and non in_progress attempts (409); (h) after admin reset, retake_pending row still shows cheat_total persisted (>=3).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter23_tabguard.py",
+    "/app/test_reports/pytest/iter23.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_student.tab_violation uses find_one_and_update with $inc so count increments atomically; also upserts tryout_violations total so cheat_total survives attempt reset. Good.",
+    "useTabGuard uses leftRef flag that is set only on visibilitychange->hidden path and reset on return; beforeunload/pagehide set unloadingRef to suppress accidental counts on refresh. Refresh does NOT fire a visibilitychange->hidden event (page unloads directly), so reload correctly does not increment counter.",
+    "tryout_detail uses random.Random(f\"{user_id}:{tryout_id}\") so shuffle is deterministic per student + stable across refreshes. Options for truefalse_multi correctly excluded from shuffle.",
+    "copy_questions resets IRT params (irt_a/b/c, calibrated, p_value, point_biserial, response_count) on copied questions so stats don't leak between tryouts. Correct.",
+    "MAX_VIOLATIONS=5 constant lives in both backend (routes_student.MAX_TAB_VIOLATIONS) and frontend TryoutEngine; keep in sync."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter23_tabguard.py"],
+  "success_rate": {"backend": "100% (8/8)", "frontend": "100% of critical flows"},
+  "test_credentials": "admin@lms.id / Admin@12345; rizki@lms.id / Siswa@12345 (used for UI exam flow); other students completed TPS Tahap 1/2 already.",
+  "seed_data_creation": "Backend pytest creates and deletes TEST_ITER23_* tryouts and courses within fixtures. UI test creates one TEST_UI_ITER23 tryout and deletes it at end (cleanup confirmed status=200). No persistent seed data left over.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All iter23 features (tab-guard, shuffle, question bank, cheat tags) verified end-to-end. UI test deliberately leaves TEST_UI_ITER23 cleaned up. The attempt from UI test for rizki@lms.id on TEST_UI_ITER23 was auto-submitted; tryout then deleted (also removes tryout_violations via delete_tryout cleanup). Pre-existing in-progress attempt for budi@lms.id on to_3 (from iter22) still exists if next iteration needs clean slate.",
+  "rca of the issue": "N/A - no issues found"
+}
