@@ -36,3 +36,7 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - Penyelarasan IRT (irt.align_scores, PAVA): nilai asli lebih tinggi tidak pernah dapat IRT lebih rendah; 100 = maks skala, 0 = min; `irt_raw` menyimpan skor asli; dijalankan saat submit, paksa kumpul, reset, ganti skala, kalibrasi
 ## Iteration 8 (Jun 2026)
 - Template CSV & Excel kini berisi kolom bidang, materi, pembahasan (+ option_e di CSV), contoh terisi & petunjuk; CSV ber-BOM UTF-8 agar rapi di Excel
+## Iteration 9 (Jun 2026)
+- Pratinjau impor: POST /admin/questions/import/preview -> tabel status per baris, edit/hapus baris, POST /admin/questions/import/validate, impor baris valid via POST /admin/tryouts/{id}/questions/import-rows (gambar ZIP diunggah saat pratinjau)
+- Ekspor bank soal Excel sesuai filter: GET /admin/question-bank/export (format template + sumber_tryout, bisa diimpor ulang)
+- Kolom template `gambar_pembahasan` -> explanation_image_url

@@ -1,0 +1,27 @@
+{
+  "summary": "Iter26 (Pratinjau Impor + Ekspor Bank Soal + gambar_pembahasan): Backend 10/10 pytest pass. All three new endpoints work correctly — POST /api/admin/questions/import/preview (CSV/XLSX/ZIP), POST /api/admin/questions/import/validate, POST /api/admin/tryouts/{id}/questions/import-rows. ZIP images for both 'gambar' and 'gambar_pembahasan' are uploaded and raw/question.explanation_image_url is set to /api/question-images/... URLs. GET /api/admin/question-bank/export returns xlsx with _TPL_HEADERS + sumber_tryout column; re-importing the exported file via preview yields all rows valid (invalid=0). Legacy /api/admin/tryouts/{id}/questions/import still works. Templates (CSV + XLSX) both include gambar_pembahasan column. bidang defaults to tryout.subject on insert when missing. UI TryoutBuilder import flow verified end-to-end on preview URL: file upload via data-testid=import-file opens import-preview-dialog with import-valid-count '2 siap' / import-invalid-count '1 bermasalah' and import-row-{i}/import-row-status-{i} cells; import-row-edit-2 opens import-row-editor (row-edit-text/row-edit-correct), row-edit-save revalidates (invalid→0); import-row-remove-0 removes a row and recounts; import-confirm triggers import and closes dialog. QuestionBankDialog export: question-bank-export downloads bank_soal_semua.xlsx (7893 bytes) using current filters.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter26_import_preview_export.py",
+    "/app/test_reports/pytest/iter26.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_admin._normalize_rows unifies image field aliases (gambar/image/image_url and gambar_pembahasan/explanation_image/explanation_image_url) — good DRY handling for CSV header variations.",
+    "_upload_row_images rewrites ZIP-embedded images to /api/question-images URLs so preview rows round-trip through validate without needing the ZIP again.",
+    "_insert_rows backfills bidang from tryout.subject when missing — matches spec; verified via test_import_rows_bidang_defaults_to_subject.",
+    "question_bank_export reuses _TPL_HEADERS and appends sumber_tryout; re-import validated (test_export_reimportable_all_valid) — single source of truth preserved.",
+    "ImportPreviewDialog.doImport filters data.rows by ok before POST — correctly imports only valid rows even if user leaves some invalid rows in table.",
+    "ImportPreviewDialog revalidate() calls /admin/questions/import/validate after edit/remove so warnings/errors stay fresh.",
+    "QuestionBankDialog.exportXlsx uses responseType:'blob' and Content-Disposition filename — downloads work correctly in browser.",
+    "No ObjectId leakage observed in question-bank endpoints (proj with _id:0)."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter26_import_preview_export.py"],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "100% of flows (preview, edit, remove, import, export)"},
+  "test_credentials": "admin@lms.id / Admin@12345",
+  "seed_data_creation": "test_iter26 creates TEST_ITER26_IMP tryout (standalone, Matematika) and inserts questions via import endpoints; module teardown deletes it via admin.delete. UI test created TEST_ITER26_UI tryout and cleaned up post-run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iter26 feature (pratinjau impor + ekspor bank soal + gambar_pembahasan) fully verified. Backend tests at /app/backend/tests/test_iter26_import_preview_export.py. UI selectors confirmed working: import-file, import-preview-dialog, import-valid-count, import-invalid-count, import-row-{i}, import-row-status-{i}, import-row-edit-{i}, import-row-editor, row-edit-text, row-edit-correct, row-edit-save, import-row-remove-{i}, import-confirm, open-question-bank, question-bank-dialog, question-bank-export."
+}
