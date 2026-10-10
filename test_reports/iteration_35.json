@@ -1,0 +1,33 @@
+{
+  "summary": "Loading-screen GIF/Video feature tested end-to-end. Backend: 12/12 pytest cases pass (loader_mode/loader_media_fit Literal validation, loader_media_url acceptance for https:// and /api/site-assets/, 422 for invalid mode/fit/url, GIF upload (image/gif) + MP4 upload return R2 pub-74b9f7bee68a URLs, oversize video>15MB and image>5MB both 400, unknown extension 400). Frontend admin UI: loader-mode-select switches between 'Kustom' and 'GIF / Video pendek'; in media mode loader-media-fields appears (loader-media-upload, loader-media-input, loader-media-fit-select) while custom-only loader-title-input, loader-style-select, loader-logo-upload are correctly hidden; uploading /tmp/test_loader.gif via loader-media-input shows loader-media-preview (IMG) and loader-preview renders loader-preview-media; after PUT with https://www.w3schools.com/html/mov_bbb.mp4 loader-preview-media renders as VIDEO. Boot loader (#boot-loader) in production index.html: with video+cover renders <video class='bl-media bl-cover' autoplay muted loop playsinline>; with GIF+contain renders <img class='bl-media'>; message appears; loader removed after readiness. Switching back to custom restores logo mark + bl-title + bl-spin. Save success toast works. Settings restored to defaults (loader_mode=custom, loader_media_url='', site_name='Binara LMS').",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter35_loader_media.py",
+    "/app/test_reports/pytest/iter35.xml"
+  ],
+  "action_items": [
+    "No code changes required. Note: webpack-dev-server does NOT hot-reload public/index.html edits — a `supervisorctl restart frontend` is needed after editing public/index.html. The frontend was serving a stale index.html (without the .bl-media CSS and media branch of the boot script) until restart; after restart, boot loader renders the media correctly."
+  ],
+  "critical_code_review_comments": [
+    "public/index.html boot script and src/pages/admin/SiteSettings.js duplicate the media/video detection (isVideo regex and media branch). Any future change (e.g. supporting .mov) must be mirrored in both places.",
+    "The boot script requires loader_media_url to start with https:// (regex /^https?://./). Site.js setSite resolves relative /api/site-assets/... URLs to absolute via assetUrl before writing localStorage, so this works today, but a direct cache injection with a relative URL would silently fall back to custom mode.",
+    "Cache-Control max-age=30 on /api/public/site-settings can delay first-paint boot loader change for logged-out visitors (unchanged from iter34).",
+    "No MIME/content sniffing on uploaded assets — a .mp4 file could contain any bytes. Current frontend accept filter mitigates for admin UI only."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter35_loader_media.py",
+    "/app/test_reports/iteration_35.json"
+  ],
+  "success_rate": {"backend": "100% (12/12)", "frontend": "100% (video+cover, gif+contain, custom restore all verified)"},
+  "test_credentials": "admin@lms.id / Admin@12345 (login response token key: access_token)",
+  "seed_data_creation": "Two site-asset GIFs were uploaded to R2 during the run; harmless and not referenced after restore. Settings restored to Binara LMS defaults with loader_mode=custom.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Loader media feature fully wired. Testids added by main agent and confirmed: loader-mode-select, loader-media-fields, loader-media-upload, loader-media-input, loader-media-fit-select, loader-media-preview, loader-preview, loader-preview-media. Admin UI PUT body must include loader_min_ms as integer (SiteSettings.js converts). Boot loader (public/index.html) reads localStorage['site_settings_cache'] synchronously; after editing public/index.html always run `sudo supervisorctl restart frontend` to make webpack-dev-server serve the new file (we hit this once this iteration). To force the boot loader into media mode programmatically, PUT loader_mode=media + absolute https:// loader_media_url, then visit any page that calls loadSite() (e.g. /admin/site-settings) so the browser localStorage cache is refreshed, then navigate to /.",
+  "rca of the issue": "Observed that updating loader_mode to 'media' with a valid https URL rendered the custom boot loader on /. RCA: /app/frontend/public/index.html had been updated with new media branch + .bl-media CSS, but webpack-dev-server was still serving the pre-update HTML (compiled bundle stale for public assets requires process restart). After `sudo supervisorctl restart frontend` and 15s warmup, curl of / confirmed `bl-media` present and the media branch (video/img) rendered correctly. No app code change required."
+}

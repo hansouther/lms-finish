@@ -68,3 +68,8 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - Teruji: iteration_34 (backend & frontend 100%)
 ## Backlog
 - Gambar landing tambahan (galeri/section lain) bila nanti ditambahkan
+
+## Update Jun 2026 — Loading screen GIF/Video
+- loader_mode: custom | media; loader_media_url (GIF/PNG/WEBP ≤5MB, MP4/WEBM ≤15MB ke R2); loader_media_fit: contain | cover
+- Boot loader index.html: media mode render img/video (autoplay muted loop playsinline) + pesan; pratinjau admin ikut mendukung
+- Teruji: iteration_35 (100%)
