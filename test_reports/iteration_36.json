@@ -1,0 +1,49 @@
+{
+  "summary": "R2 direct-delivery storage tested end-to-end. Backend: 8/8 pytest cases pass (storage-status admin-only + ok=true + provider=cloudflare_r2 + bucket=binara-lms-storage; /api/upload PDF -> /api/files/...?token= -> 307 -> *.r2.cloudflarestorage.com presigned URL that returns bytes with correct content-type; header-auth GET returns 200 bytes via proxy; no-auth 401; nonexistent path with valid token 404; MP4 ~770KB upload -> 307 -> R2 bytes with Range support; question-image PNG upload -> /api/question-images/{name} -> 302 -> pub-74b9f7bee68a.r2.dev public URL + PNG bytes fetchable). Frontend: SiteSettings page shows 'Cloudflare R2 aktif & berfungsi' with bucket name 'binara-lms-storage' and refresh button re-pings status. In-browser: question-image <img> loads successfully from pub-74b9f7bee68a.r2.dev (CORS-free public URL). CRITICAL REGRESSION: in-browser <video> element with src=`${fileUrl}?token=…` FAILS with MediaError code 4 (SRC_NOT_SUPPORTED) + networkState=3 (NETWORK_NO_SOURCE). Reason: the 307 redirect to the cross-origin presigned R2 URL (*.r2.cloudflarestorage.com) does not pass CORS/preflight for the subsequent Range requests Chrome issues for media playback. Confirmed by browser console: `Access to fetch at 'https://<accountid>.r2.cloudflarestorage.com/…' from origin 'https://web-config-studio.preview.emergentagent.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.` Images via the public pub-… hostname work because that bucket has public read; videos use presigned URLs on the private R2 S3 endpoint with no CORS configuration. PDF via <iframe> was not isolated because the test aborted on the preceding fetch probe, but iframes navigate (not fetch) so are expected to work.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "CourseLearn video playback (video_type=upload) and any <video> consuming fileUrl() for an R2-stored MP4",
+        "issue": "Browser cannot play videos via /api/files/{path}?token= because the 307 redirect lands on *.r2.cloudflarestorage.com (private S3 endpoint, presigned URL) which does NOT return Access-Control-Allow-Origin for the frontend origin. Chrome's media Range requests are blocked by CORS, resulting in MediaError code 4 (SRC_NOT_SUPPORTED) / networkState 3 (NO_SOURCE). Backend 307 and Python/curl fetches work; only browser media loading is broken.",
+        "affected_selectors": ["video[src*=\"/api/files/\"]", "CourseLearn <video>", "SiteSettings loader-preview-media when loader_media_url points to a private /api/files/ path"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter36_r2_storage.py",
+    "/app/test_reports/pytest/iter36.xml"
+  ],
+  "action_items": [
+    "CRITICAL: Configure CORS on the Cloudflare R2 bucket 'binara-lms-storage' to allow GET/HEAD with Range from the production frontend origin (and the preview *.preview.emergentagent.com). Minimal CORS rule: AllowedOrigins=['https://<prod-domain>', 'https://*.preview.emergentagent.com'], AllowedMethods=['GET','HEAD'], AllowedHeaders=['Range','If-Range','Accept','Authorization'], ExposeHeaders=['Content-Range','Content-Length','Accept-Ranges','Content-Type','ETag'], MaxAgeSeconds=3600. This fixes <video> element Range requests to the presigned URL. Verify with curl -H 'Origin: https://web-config-studio.preview.emergentagent.com' -H 'Access-Control-Request-Method: GET' -X OPTIONS '<presigned-url>' returns Access-Control-Allow-Origin.",
+    "Alternative/fallback: route video delivery through the public R2 bucket (pub-74b9f7bee68a4334803c36aaf1ec775c.r2.dev) which already works CORS-free (as shown for question-images). Would require moving uploads prefix under the public bucket or exposing a second public bucket for videos. Trade-off: videos become unlisted-but-public (unsigned).",
+    "Alternative: keep server-side streaming (header-auth path still returns 200 bytes via routes_files.download) and have the frontend <video> fetch with Authorization header via a Service Worker that rewrites requests. More invasive.",
+    "After CORS is fixed, re-verify <video> loadedmetadata + seeking in CourseLearn as student (admin preview works too) and the SiteSettings loader-preview-media when loader_media_url is a private /api/files/… path."
+  ],
+  "critical_code_review_comments": [
+    "routes_r2.py: _signed() signs ResponseContentType and ResponseContentDisposition; those are good for correct Content-Type on 206 responses, but the presigned URL only signs the 'host' header. If browsers add 'Origin' (CORS preflight), R2 will respond without CORS headers unless the bucket has a CORS policy – which it currently does not. This is the root cause of the video regression.",
+    "routes_r2.py line 42: Cache-Control 'private, max-age=600' on the redirect is fine, but 10-min caching of the redirect means token-rotation won't invalidate the cached 307 Location. Low risk because tokens are short-lived and the Location contains a 1h presigned URL anyway.",
+    "routes_r2.py: /api/question-images and /api/site-assets use 302 and point to public R2 (pub-…). Image/CSS/fonts load fine. Consider using 307 for consistency (or document the difference).",
+    "storage.py put_object guard only prevents local-disk writes on Railway (RAILWAY_ENVIRONMENT_NAME). The preview container is not Railway, so put_object silently falls back to disk here. In production the guard protects correctly. OK, informational.",
+    "routes_files.py /upload: no server-side MIME sniffing or extension whitelist for /api/upload (admin+tutor). Admin UI should enforce; backend accepts any extension. Low severity."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter36_r2_storage.py",
+    "/app/test_reports/iteration_36.json"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8)",
+    "frontend": "~70% (storage-status card + question-image + PDF via proxy OK; <video> playback broken)"
+  },
+  "test_credentials": "admin@lms.id / Admin@12345 (login response key: access_token). localStorage keys used by frontend: auth_access_token, auth_refresh_token.",
+  "seed_data_creation": "Uploaded several TEST_*.pdf, TEST_mov_bbb.mp4 (~770KB), and TEST_q.png to R2 under binaralms/uploads/admin_root/ and binaralms/question-images/. Harmless; files.is_deleted toggle not touched. SiteSettings not modified this iteration.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend R2 delivery is fully correct. The ONE blocker is R2 bucket CORS. To reproduce the video failure quickly: login as admin, inject <input type=file>, setInputFiles('/tmp/mov_bbb.mp4'), POST to /api/upload with Bearer auth_access_token, then create a <video> with src=`${returnedUrl}?token=${auth_access_token}` and listen for 'loadedmetadata'/'error'. Current result: v.error.code=4, networkState=3, console shows 'has been blocked by CORS policy' when fetching the redirected r2.cloudflarestorage.com URL. After the main agent configures R2 bucket CORS (or switches videos to the public pub-… hostname), re-run test_iter36_r2_storage.py (should still pass) and the browser video check. /tmp/mov_bbb.mp4 is already downloaded in the container for reuse. ffmpeg not installed, not needed.",
+  "rca of the issue": "Root cause: Cloudflare R2 bucket 'binara-lms-storage' served via the private S3 endpoint (730b109f520aa4a36eb9624af821d340.r2.cloudflarestorage.com) has NO CORS configuration. The backend's 307 redirect from /api/files/{path}?token= correctly lands on a valid 1-hour presigned URL, and curl/Python fetches work (verified: PDF/MP4 bytes return 200/206 with correct content-type). But Chrome's HTMLMediaElement issues Range requests when loading a <video>; because the redirect crossed origins, Chrome tags the subsequent request as CORS-sensitive and R2 responds without Access-Control-Allow-Origin, causing MediaError code 4. Reproduction: upload mp4 -> set as <video> src -> error. Mitigation: add a CORS rule to the R2 bucket covering GET/HEAD with Range from the LMS origin(s); or serve videos from the already-public pub-… hostname like images."
+}

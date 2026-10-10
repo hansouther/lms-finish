@@ -79,3 +79,10 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - Paket: /app/frontend/public/downloads/fitur-pengaturan-website.zip (PANDUAN.md, file baru, potongan index.html, patch A=tambahan murni, B=opsional tampilan logo/nama/foto)
 - Diuji pada salinan LMS-test1: build CI=true sukses, backend + unggah R2 sukses
 - Sumber kerja: /root/work (build.py)
+
+## Update Jun 2026 — Semua penyimpanan di Cloudflare R2
+- routes_r2.py (didaftarkan paling awal): /api/files?token= -> 307 presigned R2 (1 jam, tetap wajib login); header-auth tetap proxy; question-images & site-assets -> 302 R2_PUBLIC_URL; GET /api/admin/storage-status
+- storage.put_object menolak simpan ke disk bila berjalan di Railway tanpa kredensial R2 (STORAGE_LOCAL_FALLBACK=true untuk override)
+- Kartu "Penyimpanan Berkas" di Pengaturan Website
+- iteration_36: backend 8/8; video WEBM diputar+seek dari R2 terverifikasi manual (Chromium uji tidak dukung H.264, bukan bug)
+- Paket LMS-test1 diperbarui (Bagian 4 di PANDUAN; patch A apply bersih). Token R2 tidak punya izin bucket CORS (tidak dibutuhkan untuk <video>/<iframe>/<img>)
