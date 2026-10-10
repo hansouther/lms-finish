@@ -178,3 +178,16 @@ export function SplitScreenOverlay() {
     </div>
   );
 }
+
+export const FONT_STEPS = [0.9, 1, 1.15, 1.3, 1.5];
+
+export function FontSizeControl({ step, onChange }) {
+  const btn = "h-8 min-w-8 px-2 rounded-md border border-[#D5DDE3] bg-white text-[#0A1128] font-bold hover:bg-[#E6F5F8] hover:border-[#0E7490] disabled:opacity-40 disabled:pointer-events-none transition-colors duration-150";
+  return (
+    <div className="flex items-center gap-1 shrink-0" data-testid="font-size-control">
+      <button type="button" onClick={() => onChange(-1)} disabled={step <= 0} className={`${btn} text-xs`} aria-label="Perkecil teks soal" data-testid="font-size-decrease">A-</button>
+      <span className="w-10 text-center text-[11px] text-[#475569] font-mono2" data-testid="font-size-value">{Math.round(FONT_STEPS[step] * 100)}%</span>
+      <button type="button" onClick={() => onChange(1)} disabled={step >= FONT_STEPS.length - 1} className={`${btn} text-sm`} aria-label="Perbesar teks soal" data-testid="font-size-increase">A+</button>
+    </div>
+  );
+}

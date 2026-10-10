@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import MathText, { QuestionImage } from "@/components/common/MathText";
-import { ExamHeader, AnswerArea, Palette, FlagButton, FullscreenGate, NoFullscreenNotice, PseudoFullscreenGate, SplitScreenOverlay, TYPE_LABEL } from "@/components/exam/ExamParts";
+import { ExamHeader, AnswerArea, Palette, FlagButton, FullscreenGate, NoFullscreenNotice, PseudoFullscreenGate, SplitScreenOverlay, FontSizeControl, FONT_STEPS, TYPE_LABEL } from "@/components/exam/ExamParts";
 import { toast } from "sonner";
 import useTabGuard from "@/hooks/useTabGuard";
 import useExamLockdown from "@/hooks/useExamLockdown";
@@ -43,6 +43,15 @@ export default function TryoutEngine() {
   const [fsFailed, setFsFailed] = useState(false);
   const [pseudoReady, setPseudoReady] = useState(false);
   const lastViolationRef = useRef(0);
+  const [fontStep, setFontStep] = useState(() => {
+    const v = Number(localStorage.getItem("exam_font_step"));
+    return Number.isInteger(v) && v >= 0 && v < FONT_STEPS.length ? v : 1;
+  });
+  const changeFont = (d) => setFontStep((s) => {
+    const next = Math.min(FONT_STEPS.length - 1, Math.max(0, s + d));
+    try { localStorage.setItem("exam_font_step", String(next)); } catch { /* storage full */ }
+    return next;
+  });
   const answersRef = useRef({});
   answersRef.current = answers;
   const scrollRef = useRef(null);
@@ -214,9 +223,10 @@ export default function TryoutEngine() {
         <main ref={scrollRef} className="relative flex-1 min-w-0 overflow-y-auto overscroll-contain bg-white rounded-lg border border-[#D5DDE3] shadow-sm" data-testid="exam-question">
           <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-[#E2E8F0] px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2">
             <span className="rounded-md bg-[#0E7490] text-white px-3 py-1 text-xs sm:text-sm font-bold">Soal {idx + 1} / {total}</span>
-            <span className="text-[11px] sm:text-xs text-[#94A3B8] font-mono2 truncate">{q.points} poin · {TYPE_LABEL[q.type]}</span>
+            <span className="hidden sm:inline text-xs text-[#94A3B8] font-mono2 truncate">{q.points} poin · {TYPE_LABEL[q.type]}</span>
+            <FontSizeControl step={fontStep} onChange={changeFont} />
           </div>
-          <div className="px-4 sm:px-6 py-5">
+          <div className="px-4 sm:px-6 py-5" style={{ zoom: FONT_STEPS[fontStep] }} data-testid="exam-question-body">
             <div className="overflow-x-auto"><MathText as="div" text={q.text} className="block text-base sm:text-lg text-[#0A1128] leading-relaxed break-words whitespace-pre-line" data-testid="exam-question-text" /></div>
             <QuestionImage src={q.image_url} className="mt-4" testid="exam-question-image" />
             <div className="mt-6"><AnswerArea q={q} val={val} setVal={setVal} /></div>
