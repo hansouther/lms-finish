@@ -12,7 +12,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from database import db, client
 from seed import seed, seed_content, migrate_analysis
-import routes_auth, routes_public, routes_admin, routes_student, routes_tutor, routes_proctor, routes_files, routes_classes, routes_payments
+import routes_auth, routes_public, routes_admin, routes_student, routes_tutor, routes_proctor, routes_files, routes_classes, routes_payments, routes_site
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -51,6 +51,7 @@ app.include_router(routes_proctor.router)
 app.include_router(routes_files.router)
 app.include_router(routes_classes.router)
 app.include_router(routes_payments.router)
+app.include_router(routes_site.router)
 
 @app.get("/api/")
 async def root():

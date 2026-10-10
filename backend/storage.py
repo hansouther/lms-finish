@@ -15,6 +15,7 @@ S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID") or os.environ.get("R2_ACCE
 S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY") or os.environ.get("R2_SECRET_ACCESS_KEY")
 S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME") or os.environ.get("R2_BUCKET_NAME")
 S3_REGION = os.environ.get("S3_REGION", "auto" if _r2_account else "ap-southeast-1")
+PUBLIC_BASE_URL = (os.environ.get("S3_PUBLIC_URL") or os.environ.get("R2_PUBLIC_URL") or "").rstrip("/")
 
 LOCAL_DIR = Path(os.environ.get("LOCAL_STORAGE_DIR") or Path(__file__).parent / "storage_data")
 

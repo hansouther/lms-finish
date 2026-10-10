@@ -3,7 +3,7 @@ import { NavLink, Link, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Newspaper, CalendarDays, BookOpen, CalendarClock, FileText,
   Radio, Handshake, Users, LogOut, Menu, X, ClipboardList,
-  Gavel, CalendarCheck, School, BarChart3, MonitorPlay, Download, Library, Bell, UserCog, ClipboardCheck, Target, FileBarChart2, Wallet,
+  Gavel, CalendarCheck, School, BarChart3, MonitorPlay, Download, Library, Bell, UserCog, ClipboardCheck, Target, FileBarChart2, Wallet, Settings2,
 } from "lucide-react";
 import { useAuth, roleLabel } from "@/context/AuthContext";
 import api from "@/lib/api";
@@ -26,6 +26,7 @@ const NAV = {
     { to: "/admin/broadcasts", label: "Broadcast Proktor", icon: Radio },
     { to: "/admin/partnerships", label: "Kemitraan", icon: Handshake },
     { to: "/admin/users", label: "Pengguna & Sekolah", icon: Users },
+    { to: "/admin/site-settings", label: "Pengaturan Website", icon: Settings2 },
   ],
   student: [
     { to: "/student", label: "Ringkasan", icon: LayoutDashboard, end: true },

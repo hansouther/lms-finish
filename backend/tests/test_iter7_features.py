@@ -4,7 +4,7 @@ import time
 import pytest
 import requests
 
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://cbt-tryout-1.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://web-config-studio.preview.emergentagent.com").rstrip("/")
 
 ADMIN = ("admin@lms.id", "Admin@12345")
 STUDENT = ("siswa@lms.id", "Siswa@12345")

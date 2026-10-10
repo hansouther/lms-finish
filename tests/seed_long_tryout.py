@@ -1,7 +1,7 @@
 """Seed a tryout with VERY long questions for iter31 scroll-bug testing."""
 import os, requests, sys, uuid
 
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://cbt-tryout-1.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://web-config-studio.preview.emergentagent.com").rstrip("/")
 
 def login(session, email, password):
     r = session.post(f"{BASE}/api/auth/login", json={"email": email, "password": password})

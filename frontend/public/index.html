@@ -85,7 +85,8 @@
                 el.appendChild(m);
                 document.body.appendChild(el);
                 if (s.favicon_url || s.logo_url) {
-                    var link = document.createElement("link"); link.rel = "icon"; link.href = s.favicon_url || s.logo_url; document.head.appendChild(link);
+                    var fav = s.favicon_url || s.logo_url;
+                    document.querySelectorAll('link[rel="icon"],link[rel="apple-touch-icon"]').forEach(function (l) { l.href = fav; });
                 }
                 if (document.title.indexOf("Binara LMS") > -1 && s.site_name) document.title = document.title.split("Binara LMS").join(s.site_name);
             })();

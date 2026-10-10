@@ -41,6 +41,7 @@ import ManageUsers from "@/pages/admin/ManageUsers";
 import CourseContent from "@/pages/admin/CourseContent";
 import AdminAnalysis from "@/pages/admin/Analysis";
 import ManagePayments from "@/pages/admin/ManagePayments";
+import SiteSettings from "@/pages/admin/SiteSettings";
 import StudentPayments from "@/pages/student/StudentPayments";
 
 import TutorDashboard from "@/pages/tutor/TutorDashboard";
@@ -121,6 +122,7 @@ function AppRoutes() {
           <Route path="/admin/users" element={<ManageUsers />} />
           <Route path="/admin/analysis" element={<AdminAnalysis />} />
           <Route path="/admin/payments" element={<ManagePayments />} />
+          <Route path="/admin/site-settings" element={<SiteSettings />} />
         </Route>
       </Route>
 

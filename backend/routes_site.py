@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 from database import db
 from utils import now_iso
 from security import require_roles
-from storage import put_object, get_object, MIME_TYPES, APP_NAME
+from storage import put_object, get_object, MIME_TYPES, APP_NAME, PUBLIC_BASE_URL, s3_client
 
 router = APIRouter(prefix="/api", tags=["site"])
 admin_only = require_roles("admin")
@@ -123,6 +123,8 @@ async def upload_site_asset(file: UploadFile = File(...), user: dict = Depends(a
         "content_type": content_type, "size": len(data), "uploaded_by": user["id"],
         "is_deleted": False, "created_at": now_iso(),
     })
+    if s3_client and PUBLIC_BASE_URL:
+        return {"url": f"{PUBLIC_BASE_URL}/{result['path']}"}
     return {"url": f"/api/site-assets/{result['path'][len(SITE_PREFIX):]}"}
 
 
