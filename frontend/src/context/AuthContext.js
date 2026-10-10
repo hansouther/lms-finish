@@ -7,6 +7,8 @@ export function roleHome(role) {
   return { admin: "/admin", student: "/student", tutor: "/tutor", proctor: "/proctor" }[role] || "/";
 }
 
+export const needsBiodata = (user) => !!user && user.role === "student" && (!user.school_id || !user.grade);
+
 export function roleLabel(role) {
   return { admin: "Administrator", student: "Siswa", tutor: "Tentor", proctor: "Proktor" }[role] || role;
 }

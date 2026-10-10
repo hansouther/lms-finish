@@ -76,6 +76,7 @@ async def startup():
     from routes_admin import backfill_question_bidang
     await backfill_question_bidang()
     await db.users.update_many({"status": {"$exists": False}}, {"$set": {"status": "approved"}})
+    await db.users.update_many({"role": "student", "status": "pending"}, {"$set": {"status": "approved"}})
     
     legacy = await db.teaching_slots.find({"sessions": {"$exists": False}, "date": {"$exists": True}}, {"_id": 0}).to_list(500)
     for sl in legacy:

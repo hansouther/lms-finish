@@ -14,6 +14,7 @@ import NewsDetail from "@/pages/public/NewsDetail";
 import CoursesPage from "@/pages/public/CoursesPage";
 import CourseDetail from "@/pages/public/CourseDetail";
 import Profile from "@/pages/Profile";
+import CompleteBiodata from "@/pages/CompleteBiodata";
 
 import StudentDashboard from "@/pages/student/StudentDashboard";
 import LearningRoom from "@/pages/student/LearningRoom";
@@ -72,6 +73,7 @@ function AppRoutes() {
       <Route path="/register/tentor" element={<RegisterTutor />} />
       <Route path="/onboarding/tutor" element={<TutorOnboarding />} />
       <Route path="/pending" element={<PendingVerification />} />
+      <Route path="/lengkapi-biodata" element={<CompleteBiodata />} />
       <Route path="/kalender" element={<CalendarPage />} />
       <Route path="/berita" element={<NewsPage />} />
       <Route path="/berita/:id" element={<NewsDetail />} />

@@ -34,7 +34,7 @@ export default function Register() {
     try {
       const { data } = await api.post("/auth/register", form);
       setUser(data);
-      toast.success("Akun dibuat! Menunggu verifikasi admin.");
+      toast.success("Akun berhasil dibuat!");
       if (data.status && data.status !== "approved") navigate("/pending", { replace: true });
       else navigate(roleHome(data.role), { replace: true });
     } catch (err) {
@@ -49,7 +49,7 @@ export default function Register() {
     try {
       const { data } = await api.post("/auth/google/session", { token: credentialResponse.credential });
       setUser(data);
-      toast.success("Akun berhasil dibuat dengan Google!");
+      toast.success("Akun Google terhubung! Lengkapi biodata Anda.");
       if (data.status && data.status !== "approved" && data.role !== "admin") navigate("/pending", { replace: true });
       else navigate(roleHome(data.role), { replace: true });
     } catch (err) {
