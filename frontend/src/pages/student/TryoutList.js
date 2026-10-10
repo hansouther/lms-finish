@@ -5,7 +5,7 @@ import useFetch from "@/hooks/useFetch";
 import PageHeader from "@/components/common/PageHeader";
 import { Loading, Empty } from "@/components/common/States";
 import { Button } from "@/components/ui/button";
-import { formatRupiah, formatDateTime } from "@/lib/format";
+import { formatRupiah, formatDateTime, formatNilai } from "@/lib/format";
 import { payItem } from "@/lib/midtrans";
 
 const STATUS = {
@@ -47,7 +47,7 @@ export default function TryoutList() {
                 <div className="mt-5">
                   {t.attempt_status === "submitted" ? (
                     <div className="flex items-center justify-between">
-                      <span className="font-mono2 text-2xl font-bold" style={{ color: t.my_percentage >= 70 ? "#10B981" : "#C9A227" }}>{t.my_percentage}%</span>
+                      <span className="font-mono2 text-2xl font-bold" style={{ color: t.my_percentage >= 70 ? "#10B981" : "#C9A227" }}>{formatNilai(t.my_percentage)}</span>
                       <Button variant="outline" size="sm" className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" onClick={() => navigate(`/student/results/${t.attempt_id}`)} data-testid={`view-result-${t.id}`}>
                         <Eye className="h-4 w-4" /> Lihat Hasil
                       </Button>

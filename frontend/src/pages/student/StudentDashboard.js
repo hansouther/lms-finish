@@ -7,7 +7,7 @@ import StatCard from "@/components/common/StatCard";
 import { Loading, Empty } from "@/components/common/States";
 import StudentRecommendations from "@/components/common/StudentRecommendations";
 import { Button } from "@/components/ui/button";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatNilai } from "@/lib/format";
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -58,7 +58,7 @@ export default function StudentDashboard() {
                       <p className="text-sm font-medium text-[#0A1128]">Nilai: <span className="font-mono2">{a.score}/{a.max_score}</span></p>
                       <p className="text-xs text-[#94A3B8]">{formatDateTime(a.submitted_at)}</p>
                     </div>
-                    <span className="font-mono2 text-lg font-bold" style={{ color: a.percentage >= 70 ? "#10B981" : a.percentage >= 50 ? "#C9A227" : "#EF4444" }}>{a.percentage}%</span>
+                    <span className="font-mono2 text-lg font-bold" style={{ color: a.percentage >= 70 ? "#10B981" : a.percentage >= 50 ? "#C9A227" : "#EF4444" }}>{formatNilai(a.percentage)}</span>
                   </div>
                 ))}
               </div>

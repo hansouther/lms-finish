@@ -29,3 +29,5 @@ export function formatDateTime(iso) {
     return iso;
   }
 }
+
+export const formatNilai = (v) => Number(v || 0).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

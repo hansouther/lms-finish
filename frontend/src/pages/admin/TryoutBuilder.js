@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, HelpCircle, CheckCircle2, X, Upload, FileDown, Tag, FileSpreadsheet, Gauge, ImagePlus, Sigma, Loader2, Library, BookMarked } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, HelpCircle, CheckCircle2, X, Upload, FileDown, Tag, FileSpreadsheet, Gauge, ImagePlus, Sigma, Loader2, Library, BookMarked, BookOpenCheck } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
 import api, { apiError } from "@/lib/api";
 import { Loading, Empty } from "@/components/common/States";
@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import QuestionBankDialog from "@/components/common/QuestionBankDialog";
+import ExplanationEditor from "@/components/common/ExplanationEditor";
 
 const TYPES = [
   { v: "single", l: "Pilihan Ganda" },
@@ -45,7 +46,7 @@ const DIFF_LABEL = { mudah: "Mudah", sedang: "Sedang", sulit: "Sulit" };
 const DIFF_COLOR = { mudah: "#10B981", sedang: "#C9A227", sulit: "#EF4444" };
 const effDiff = (q) => (q.irt_calibrated && q.irt_b != null) ? (q.irt_b < -0.5 ? "mudah" : q.irt_b > 0.5 ? "sulit" : "sedang") : (q.difficulty_label || "sedang");
 const newOpts = () => [{ id: "o1", text: "" }, { id: "o2", text: "" }, { id: "o3", text: "" }, { id: "o4", text: "" }];
-const EMPTY = { type: "single", text: "", points: 20, options: newOpts(), correct: [], essay: "", competency: "umum", difficulty: "sedang", image_url: null, tf_labels: ["Benar", "Salah"], tfKey: {}, bidang: "", materi: "" };
+const EMPTY = { type: "single", text: "", points: 20, options: newOpts(), correct: [], essay: "", competency: "umum", difficulty: "sedang", image_url: null, tf_labels: ["Benar", "Salah"], tfKey: {}, bidang: "", materi: "", explanation: "", explanation_image_url: null };
 
 export default function TryoutBuilder() {
   const { id } = useParams();
@@ -153,6 +154,7 @@ export default function TryoutBuilder() {
       tf_labels: tfLabels(q),
       tfKey: q.type === "truefalse_multi" ? parseTfMap(q.correct_answers) : {},
       bidang: q.bidang || "", materi: q.materi || "",
+      explanation: q.explanation || "", explanation_image_url: q.explanation_image_url || null,
     });
     setEditId(q.id); setOpen(true);
   };
@@ -182,7 +184,7 @@ export default function TryoutBuilder() {
       correct_answers = form.essay.split(",").map((s) => s.trim()).filter(Boolean);
       if (!correct_answers.length) return toast.error("Isi kunci jawaban esai");
     }
-    const payload = { type: form.type, text: form.text, options, correct_answers, points: parseInt(form.points || 1, 10), order: 0, competency: form.competency || "umum", difficulty_label: form.difficulty || "sedang", image_url: form.image_url || null, bidang: form.bidang, materi: form.materi, tf_labels: form.type.startsWith("truefalse") ? form.tf_labels.map((l, i) => l.trim() || ["Benar", "Salah"][i]) : null };
+    const payload = { type: form.type, text: form.text, options, correct_answers, points: parseInt(form.points || 1, 10), order: 0, competency: form.competency || "umum", difficulty_label: form.difficulty || "sedang", image_url: form.image_url || null, bidang: form.bidang, materi: form.materi, explanation: form.explanation || null, explanation_image_url: form.explanation_image_url || null, tf_labels: form.type.startsWith("truefalse") ? form.tf_labels.map((l, i) => l.trim() || ["Benar", "Salah"][i]) : null };
     try {
       if (editId) await api.put(`/admin/questions/${editId}`, payload);
       else await api.post(`/admin/tryouts/${id}/questions`, payload);
@@ -307,6 +309,9 @@ export default function TryoutBuilder() {
                       ))
                     )}
                   </div>
+                  <p className={`mt-3 text-xs flex items-center gap-1 ${q.explanation ? "text-[#8A6D12]" : "text-[#94A3B8] italic"}`} data-testid={`question-explanation-status-${q.id}`}>
+                    <BookOpenCheck className="h-3.5 w-3.5" /> {q.explanation ? "Pembahasan tersedia" : "Belum ada pembahasan"}
+                  </p>
                 </div>
                 <div className="flex gap-1">
                   <Button variant="ghost" size="icon" onClick={() => openEdit(q)} className="hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid={`edit-question-${q.id}`}><Plus className="h-4 w-4 rotate-45" /></Button>
@@ -428,6 +433,8 @@ export default function TryoutBuilder() {
                 <p className="mt-1 text-xs text-[#94A3B8]">Penilaian mengabaikan huruf besar/kecil & spasi di awal/akhir.</p>
               </div>
             )}
+
+            <ExplanationEditor text={form.explanation} imageUrl={form.explanation_image_url} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
 
             {(form.text.trim() || form.image_url) && (
               <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4" data-testid="question-preview">

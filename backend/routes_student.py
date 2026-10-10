@@ -426,6 +426,25 @@ async def _recalibrate_tryout(tryout_id: str):
         await db.questions.update_one({"id": qid}, {"$set": p})
 
 
+async def align_tryout_irt(tryout_id: str):
+    """Selaraskan skor IRT semua peserta dengan nilai asli (monoton, 0=min, 100=maks)."""
+    tryout = await db.tryouts.find_one({"id": tryout_id}, {"_id": 0})
+    scale = irt.resolve_scale(tryout)
+    if not scale.get("show_irt", True):
+        return
+    atts = await db.attempts.find({"tryout_id": tryout_id, "status": "submitted"},
+                                  {"_id": 0, "id": 1, "percentage": 1, "irt_raw": 1, "irt_scaled": 1}).to_list(20000)
+    rows = [(a["id"], a.get("percentage"), a.get("irt_raw", a.get("irt_scaled"))) for a in atts]
+    aligned = irt.align_scores(rows, scale)
+    for a in atts:
+        new = aligned.get(a["id"])
+        upd = {} if "irt_raw" in a else {"irt_raw": a.get("irt_scaled")}
+        if new is not None and new != a.get("irt_scaled"):
+            upd["irt_scaled"] = new
+        if upd:
+            await db.attempts.update_one({"id": a["id"]}, {"$set": upd})
+
+
 async def _finalize(attempt: dict, answers: dict, background: BackgroundTasks, extra: dict = None):
     questions = await db.questions.find({"tryout_id": attempt["tryout_id"]}, {"_id": 0}).to_list(200)
     tryout = await db.tryouts.find_one({"id": attempt["tryout_id"]}, {"_id": 0})
@@ -436,10 +455,12 @@ async def _finalize(attempt: dict, answers: dict, background: BackgroundTasks, e
         {"$set": {"answers": answers, "status": "submitted", "submitted_at": now_iso(),
                   **result, **irt_score, **(extra or {})}},
     )
+    await align_tryout_irt(attempt["tryout_id"])
     # Kalibrasi ulang parameter IRT secara otomatis dari data jawaban terbaru
     background.add_task(_recalibrate_tryout, attempt["tryout_id"])
+    fresh = await db.attempts.find_one({"id": attempt["id"]}, {"_id": 0, "irt_scaled": 1})
     return {"ok": True, "score": result["score"], "max_score": result["max_score"],
-            "percentage": result["percentage"], **irt_score}
+            "percentage": result["percentage"], **irt_score, "irt_scaled": fresh.get("irt_scaled")}
 
 
 @router.post("/attempts/{attempt_id}/submit")
@@ -500,7 +521,14 @@ async def attempt_detail(attempt_id: str, user: dict = Depends(student_only)):
     attempt = await db.attempts.find_one({"id": attempt_id, "student_id": user["id"]}, {"_id": 0})
     if not attempt:
         raise HTTPException(status_code=404, detail="Hasil tidak ditemukan")
-    t = await db.tryouts.find_one({"id": attempt["tryout_id"]}, {"_id": 0})
+    t = await db.tryouts.find_one({"id": attempt["tryout_id"]}, {"_id": 0}) or {}
+    review_open = t.get("kind") == "exercise" or bool(t.get("show_review"))
+    attempt["review_open"] = review_open
+    if not review_open:
+        attempt["per_question"] = []
+        attempt.pop("answers", None)
+        attempt["tryout"] = t
+        return attempt
     questions = await db.questions.find({"tryout_id": attempt["tryout_id"]}, {"_id": 0}).sort("order", 1).to_list(200)
     qmap = {q["id"]: q for q in questions}
     for pq in attempt.get("per_question", []):
@@ -510,5 +538,7 @@ async def attempt_detail(attempt_id: str, user: dict = Depends(student_only)):
             pq["image_url"] = q.get("image_url")
             pq["options"] = q.get("options", [])
             pq["tf_labels"] = q.get("tf_labels")
+            pq["explanation"] = q.get("explanation")
+            pq["explanation_image_url"] = q.get("explanation_image_url")
     attempt["tryout"] = t
     return attempt

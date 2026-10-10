@@ -7,7 +7,7 @@ import { Loading, Empty } from "@/components/common/States";
 import ConfirmButton from "@/components/common/ConfirmButton";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatNilai } from "@/lib/format";
 import CheatTag from "@/components/common/CheatTag";
 import { toast } from "sonner";
 
@@ -122,7 +122,7 @@ export default function TryoutMonitor() {
                     <TableCell data-testid={`monitor-save-${i}`}><SaveCell r={r} now={data.server_now} /></TableCell>
                     <TableCell className="font-mono2 text-sm">
                       {r.status === "in_progress" ? <span className="flex items-center gap-1 text-[#0E7490]"><Clock className="h-3.5 w-3.5" /> {mmss(r.remaining_seconds)}</span>
-                        : r.status === "submitted" ? <span className="font-bold text-[#10B981]">{r.percentage}%</span> : <span className="text-[#94A3B8]">—</span>}
+                        : r.status === "submitted" ? <span className="font-bold text-[#10B981]">{formatNilai(r.percentage)}</span> : <span className="text-[#94A3B8]">—</span>}
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       {r.status === "retake_pending" ? (

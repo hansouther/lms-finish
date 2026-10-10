@@ -298,7 +298,7 @@ def score_attempt(questions, per_question, scale=None):
     """Hitung theta & skor IRT untuk satu attempt dari per_question hasil grading."""
     s = scale or SCALE_PRESETS[DEFAULT_SCALE]
     if not s.get("show_irt", True):
-        return {"theta": None, "theta_se": None, "irt_scaled": None,
+        return {"theta": None, "theta_se": None, "irt_scaled": None, "irt_raw": None,
                 "irt_scale": s["key"], "irt_scale_label": s["label"]}
     qmap = {q["id"]: q for q in questions}
     items = []
@@ -310,7 +310,8 @@ def score_attempt(questions, per_question, scale=None):
         resp = 1 if pq.get("correct") else 0
         items.append((a, b, c, resp))
     theta, se = estimate_theta(items)
-    return {"theta": theta, "theta_se": se, "irt_scaled": scaled_score(theta, s),
+    raw = scaled_score(theta, s)
+    return {"theta": theta, "theta_se": se, "irt_scaled": raw, "irt_raw": raw,
             "irt_scale": s["key"], "irt_scale_label": s["label"]}
 
 
@@ -388,3 +389,41 @@ def build_blueprint(questions):
 
 def gaps_any(gaps):
     return any(abs(v) > 0 for v in gaps.values())
+
+
+# ---------------------------------------------------------------------------
+# Penyelarasan skor IRT dengan nilai asli (monoton, 0 = min skala, 100 = maks)
+# ---------------------------------------------------------------------------
+def align_scores(rows, scale):
+    """rows: [(attempt_id, percentage, raw_irt)]. Return {attempt_id: aligned_irt}."""
+    lo, hi = float(scale["min"]), float(scale["max"])
+    groups = {}
+    for aid, pct, raw in rows:
+        if raw is None:
+            continue
+        groups.setdefault(round(float(pct or 0), 2), []).append((aid, float(raw)))
+    keys = sorted(groups)
+    if not keys:
+        return {}
+
+    def pin(p, v):
+        return hi if p >= 100 else lo if p <= 0 else v
+
+    blocks = []  # pool adjacent violators: [sum, weight, [group keys]]
+    for p in keys:
+        vals = [pin(p, v) for _, v in groups[p]]
+        blocks.append([sum(vals), len(vals), [p]])
+        while len(blocks) > 1 and blocks[-2][0] / blocks[-2][1] > blocks[-1][0] / blocks[-1][1]:
+            s, w, g = blocks.pop()
+            blocks[-1][0] += s
+            blocks[-1][1] += w
+            blocks[-1][2] += g
+    level = {p: s / w for s, w, g in blocks for p in g}
+    out = {}
+    for i, p in enumerate(keys):
+        lower = lo if i == 0 else (level[keys[i - 1]] + level[p]) / 2
+        upper = hi if i == len(keys) - 1 else (level[p] + level[keys[i + 1]]) / 2
+        for aid, raw in groups[p]:
+            v = pin(p, min(max(raw, lower), upper))
+            out[aid] = int(round(_clamp(v, lo, hi)))
+    return out

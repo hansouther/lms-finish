@@ -1,11 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { CheckCircle2, XCircle, ArrowLeft, Trophy } from "lucide-react";
+import { CheckCircle2, XCircle, ArrowLeft, Trophy, BookLock, BookOpenCheck } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
 import { Loading } from "@/components/common/States";
 import { Button } from "@/components/ui/button";
 import MathText, { QuestionImage } from "@/components/common/MathText";
 import { TfMultiReview } from "@/components/common/TfMulti";
 import { tfLabels } from "@/lib/tf";
+import { formatNilai } from "@/lib/format";
 
 const TYPE_LABEL = { single: "Pilihan Ganda", multiple: "Pilihan Ganda Kompleks", truefalse: "Benar/Salah", truefalse_multi: "Benar/Salah Majemuk", essay: "Esai" };
 
@@ -40,7 +41,7 @@ export default function TryoutResult() {
           <div>
             <p className="text-white/70 text-sm">{data.tryout?.title}</p>
             <h1 className="mt-1 text-2xl font-bold">Hasil Try Out Anda</h1>
-            <p className="mt-3 text-white/70 text-sm">Skor: <span className="font-mono2 font-bold text-white">{data.score} / {data.max_score}</span></p>
+            <p className="mt-3 text-white/70 text-sm">Poin: <span className="font-mono2 font-bold text-white">{data.score} / {data.max_score}</span> <span className="text-white/50">· dikonversi ke skala 0–100</span></p>
             {data.irt_scaled != null && (
               <div className="mt-3 inline-flex items-center gap-3 rounded-xl bg-white/10 px-4 py-2" data-testid="irt-score-badge">
                 <div>
@@ -56,16 +57,23 @@ export default function TryoutResult() {
             )}
           </div>
           <div className="text-center">
-            <div className="h-28 w-28 rounded-full flex items-center justify-center border-4" style={{ borderColor: color }}>
+            <div className="h-32 w-32 rounded-full flex items-center justify-center border-4" style={{ borderColor: color }}>
               <div>
-                <p className="font-mono2 text-3xl font-bold" style={{ color }}>{pct}%</p>
-                <p className="text-[10px] text-white/60 uppercase tracking-wide">Nilai Akhir</p>
+                <p className="font-mono2 text-2xl font-bold" style={{ color }} data-testid="result-nilai">{formatNilai(pct)}</p>
+                <p className="text-[10px] text-white/60 uppercase tracking-wide">Nilai (0–100)</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
+      {!data.review_open ? (
+        <div className="mt-8 rounded-2xl border border-dashed border-[#CBD5E1] bg-white p-8 text-center" data-testid="review-locked">
+          <BookLock className="mx-auto h-10 w-10 text-[#94A3B8]" />
+          <p className="mt-3 font-semibold text-[#0A1128]">Pembahasan belum dibuka</p>
+          <p className="mt-1 text-sm text-[#475569]">Kunci jawaban dan pembahasan akan tampil di sini setelah dibuka oleh admin.</p>
+        </div>
+      ) : (<>
       <h2 className="mt-8 mb-4 font-semibold text-[#0A1128] flex items-center gap-2"><Trophy className="h-5 w-5 text-[#C9A227]" /> Pembahasan Jawaban</h2>
       <div className="space-y-4">
         {(data.per_question || []).map((pq, i) => {
@@ -89,6 +97,13 @@ export default function TryoutResult() {
                 <div className="rounded-lg bg-[#ECFDF5] px-3 py-2"><span className="text-xs text-[#94A3B8]">Kunci:</span> <MathText text={at.correct} className="text-[#10B981] font-medium" /></div>
               </div>
               )}
+              {(pq.explanation || pq.explanation_image_url) && (
+                <div className="mt-3 ml-8 rounded-lg border-l-4 border-[#C9A227] bg-[#FFFBEB] px-4 py-3" data-testid={`review-explanation-${i}`}>
+                  <p className="text-xs font-semibold text-[#8A6D12] flex items-center gap-1"><BookOpenCheck className="h-3.5 w-3.5" /> Pembahasan</p>
+                  {pq.explanation && <MathText as="div" text={pq.explanation} className="mt-1 block text-sm text-[#0A1128] whitespace-pre-line leading-relaxed" />}
+                  <QuestionImage src={pq.explanation_image_url} className="mt-2 max-h-60" testid={`review-explanation-image-${i}`} />
+                </div>
+              )}
             </div>
           );
         })}
@@ -96,6 +111,7 @@ export default function TryoutResult() {
           <p className="text-sm text-[#94A3B8]">Pembahasan tidak tersedia untuk hasil ini.</p>
         )}
       </div>
+      </>)}
     </div>
   );
 }

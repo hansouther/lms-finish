@@ -95,6 +95,7 @@ class TryoutBody(BaseModel):
     shuffle_questions: bool = False
     shuffle_options: bool = False
     tab_warning_limit: int = Field(5, ge=0, le=20)  # 0 = deteksi pindah tab nonaktif
+    show_review: bool = False  # pembahasan & kunci dibuka untuk siswa
 
 
 class IrtScaleBody(BaseModel):
@@ -122,6 +123,8 @@ async def _rescore_attempts(tryout_id: str, tryout: dict):
     for a in attempts:
         res = irt.score_attempt(questions, a.get("per_question"), scale)
         await db.attempts.update_one({"id": a["id"]}, {"$set": res})
+    from routes_student import align_tryout_irt
+    await align_tryout_irt(tryout_id)
     return len(attempts)
 
 
@@ -138,6 +141,8 @@ class QuestionBody(BaseModel):
     difficulty_label: Optional[str] = None  # mudah | sedang | sulit (label manual untuk IRT)
     bidang: Optional[str] = None  # mata pelajaran
     materi: Optional[str] = None  # topik
+    explanation: Optional[str] = None  # pembahasan (mendukung rumus)
+    explanation_image_url: Optional[str] = None
 
 
 class CopyQuestionsBody(BaseModel):
@@ -475,6 +480,18 @@ async def update_tryout(tryout_id: str, body: TryoutBody, background: Background
     return {"ok": True, "rescored": rescored}
 
 
+class ReviewBody(BaseModel):
+    show_review: bool
+
+
+@router.put("/tryouts/{tryout_id}/review")
+async def set_review(tryout_id: str, body: ReviewBody, user: dict = Depends(admin_only)):
+    res = await db.tryouts.update_one({"id": tryout_id}, {"$set": {"show_review": body.show_review}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Try Out tidak ditemukan")
+    return {"ok": True, "show_review": body.show_review}
+
+
 @router.get("/irt-scales")
 async def irt_scales(user: dict = Depends(admin_only)):
     """Daftar preset skala skor IRT (SNBT, TKA, SD/SMP, Kustom)."""
@@ -675,6 +692,8 @@ async def calibrate_tryout(tryout_id: str, user: dict = Depends(admin_only)):
         res = irt.score_attempt(list(qmap.values()), a.get("per_question"), scale)
         await db.attempts.update_one({"id": a["id"]}, {"$set": res})
         rescored += 1
+    from routes_student import align_tryout_irt
+    await align_tryout_irt(tryout_id)
 
     return {
         "calibrated": calibrated,
@@ -769,7 +788,8 @@ async def reset_attempt(tryout_id: str, attempt_id: str, background: BackgroundT
     await db.tryout_retakes.insert_one({"id": new_id(), "tryout_id": tryout_id, "student_id": sid, "used": False,
                                         "granted_by": user["id"], "created_at": now_iso()})
     if a["status"] == "submitted":
-        from routes_student import _recalibrate_tryout
+        from routes_student import _recalibrate_tryout, align_tryout_irt
+        await align_tryout_irt(tryout_id)
         background.add_task(_recalibrate_tryout, tryout_id)
     return {"ok": True}
 
@@ -793,7 +813,8 @@ async def force_submit(tryout_id: str, attempt_id: str, background: BackgroundTa
     irt_score = irt.score_attempt(questions, result.get("per_question"), irt.resolve_scale(t))
     await db.attempts.update_one({"id": attempt_id}, {"$set": {
         "status": "submitted", "submitted_at": now_iso(), "force_submitted_by": user["id"], **result, **irt_score}})
-    from routes_student import _recalibrate_tryout
+    from routes_student import _recalibrate_tryout, align_tryout_irt
+    await align_tryout_irt(tryout_id)
     background.add_task(_recalibrate_tryout, tryout_id)
     return {"ok": True, "percentage": result["percentage"]}
 
@@ -1063,7 +1084,8 @@ def _row_to_question(row: dict, order: int):
     return {"type": t, "text": text, "options": options, "correct_answers": correct, "tf_labels": tf_labels,
             "points": points, "order": order, "competency": comp, "difficulty_label": dl,
             "bidang": _clean_text(str(row.get("bidang") or row.get("mapel") or "")),
-            "materi": _clean_text(str(row.get("materi") or row.get("topik") or ""))}, None
+            "materi": _clean_text(str(row.get("materi") or row.get("topik") or "")),
+            "explanation": _clean_text(str(row.get("pembahasan") or row.get("explanation") or ""))}, None
 
 
 def _parse_sheet(data: bytes, fname: str):

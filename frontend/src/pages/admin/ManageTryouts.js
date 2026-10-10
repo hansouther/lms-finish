@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, FileText, Settings2, BarChart3, HelpCircle, Users, Activity, CalendarClock, Shuffle, ShieldAlert } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, Settings2, BarChart3, HelpCircle, Users, Activity, CalendarClock, Shuffle, ShieldAlert, BookOpenCheck, BookLock } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
 import api, { apiError } from "@/lib/api";
 import PageHeader from "@/components/common/PageHeader";
@@ -16,7 +16,7 @@ import IrtScaleFields, { EMPTY_CUSTOM, toCustomPayload, SCALE_PRESETS } from "@/
 import { formatRupiah, formatDateTime, toLocalInput, fromLocalInput } from "@/lib/format";
 import { toast } from "sonner";
 
-const EMPTY = { title: "", description: "", subject: "", duration_minutes: 60, published: false, irt_scale: "snbt", irt_scale_custom: EMPTY_CUSTOM, price: 0, start_at: "", end_at: "", shuffle_questions: false, shuffle_options: false, tab_warning_limit: 5 };
+const EMPTY = { title: "", description: "", subject: "", duration_minutes: 60, published: false, irt_scale: "snbt", irt_scale_custom: EMPTY_CUSTOM, price: 0, start_at: "", end_at: "", shuffle_questions: false, shuffle_options: false, tab_warning_limit: 5, show_review: false };
 const SCHED = { upcoming: ["Belum dibuka", "#C9A227", "#FBF3DC"], open: ["Dibuka", "#10B981", "#ECFDF5"], closed: ["Ditutup", "#EF4444", "#FEF2F2"] };
 const scaleLabel = (t) => (SCALE_PRESETS.find((p) => p.key === (t.irt_scale || "snbt")) || SCALE_PRESETS[0]).label;
 
@@ -29,7 +29,7 @@ export default function ManageTryouts() {
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e?.target ? e.target.value : e }));
 
   const openNew = () => { setForm(EMPTY); setEditId(null); setOpen(true); };
-  const openEdit = (t) => { setForm({ title: t.title, description: t.description || "", subject: t.subject, duration_minutes: t.duration_minutes, published: t.published, irt_scale: t.irt_scale || "snbt", irt_scale_custom: t.irt_scale_custom || EMPTY_CUSTOM, price: t.price || 0, start_at: toLocalInput(t.start_at), end_at: toLocalInput(t.end_at), shuffle_questions: !!t.shuffle_questions, shuffle_options: !!t.shuffle_options, tab_warning_limit: t.tab_warning_limit ?? 5 }); setEditId(t.id); setOpen(true); };
+  const openEdit = (t) => { setForm({ title: t.title, description: t.description || "", subject: t.subject, duration_minutes: t.duration_minutes, published: t.published, irt_scale: t.irt_scale || "snbt", irt_scale_custom: t.irt_scale_custom || EMPTY_CUSTOM, price: t.price || 0, start_at: toLocalInput(t.start_at), end_at: toLocalInput(t.end_at), shuffle_questions: !!t.shuffle_questions, shuffle_options: !!t.shuffle_options, tab_warning_limit: t.tab_warning_limit ?? 5, show_review: !!t.show_review }); setEditId(t.id); setOpen(true); };
 
   const save = async () => {
     if (form.start_at && form.end_at && new Date(form.end_at) <= new Date(form.start_at)) return toast.error("Waktu tutup harus setelah waktu buka");
@@ -40,6 +40,13 @@ export default function ManageTryouts() {
         toast.success(res?.rescored ? `Try Out tersimpan · ${res.rescored} hasil peserta dihitung ulang` : "Try Out tersimpan");
       } else { await api.post("/admin/tryouts", payload); toast.success("Try Out tersimpan"); }
       setOpen(false); refetch();
+    } catch (e) { toast.error(apiError(e)); }
+  };
+  const toggleReview = async (t) => {
+    try {
+      await api.put(`/admin/tryouts/${t.id}/review`, { show_review: !t.show_review });
+      toast.success(t.show_review ? "Pembahasan ditutup untuk siswa" : "Pembahasan dibuka untuk siswa");
+      refetch();
     } catch (e) { toast.error(apiError(e)); }
   };
   const del = async (id) => { try { await api.delete(`/admin/tryouts/${id}`); toast.success("Try Out dihapus"); refetch(); } catch (e) { toast.error(apiError(e)); } };
@@ -80,6 +87,9 @@ export default function ManageTryouts() {
                 <Button size="sm" onClick={() => navigate(`/admin/tryouts/${t.id}/builder`)} className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" data-testid={`build-${t.id}`}><Settings2 className="h-4 w-4" /> Kelola Soal</Button>
                 <Button size="sm" variant="outline" onClick={() => navigate(`/admin/tryouts/${t.id}/results`)} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid={`results-${t.id}`}><BarChart3 className="h-4 w-4" /> Hasil</Button>
                 <Button size="sm" variant="outline" onClick={() => navigate(`/admin/tryouts/${t.id}/monitor`)} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid={`monitor-${t.id}`}><Activity className="h-4 w-4" /> Pantau Peserta</Button>
+                <Button size="sm" variant="outline" onClick={() => toggleReview(t)} className={`rounded-full ${t.show_review ? "border-[#10B981] text-[#10B981] hover:bg-[#ECFDF5]" : "text-[#475569] hover:bg-[#FBF3DC]"}`} data-testid={`toggle-review-${t.id}`}>
+                  {t.show_review ? <BookOpenCheck className="h-4 w-4" /> : <BookLock className="h-4 w-4" />} {t.show_review ? "Pembahasan Dibuka" : "Buka Pembahasan"}
+                </Button>
                 <Button size="sm" variant="ghost" onClick={() => openEdit(t)} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid={`edit-tryout-${t.id}`}><Pencil className="h-4 w-4" /></Button>
                 <ConfirmButton onConfirm={() => del(t.id)} trigger={<Button size="sm" variant="ghost" className="rounded-full hover:bg-red-50 hover:text-red-600" data-testid={`delete-tryout-${t.id}`}><Trash2 className="h-4 w-4" /></Button>} />
               </div>
@@ -127,6 +137,10 @@ export default function ManageTryouts() {
               <Label className="flex items-center gap-1.5"><ShieldAlert className="h-4 w-4 text-[#0E7490]" /> Batas peringatan pindah tab</Label>
               <Input type="number" min="0" max="20" value={form.tab_warning_limit} onChange={set("tab_warning_limit")} className="mt-1.5 w-32" data-testid="tryout-tab-limit" />
               <p className="mt-1 text-xs text-[#94A3B8]">1–20 kali. Saat batas tercapai, Try Out otomatis dikumpulkan. Isi 0 untuk mematikan deteksi pindah tab.</p>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] p-3">
+              <div><Label>Buka Pembahasan</Label><p className="text-xs text-[#94A3B8]">Jika aktif, siswa bisa melihat kunci & pembahasan tiap soal. Jika tidak, siswa hanya melihat nilai.</p></div>
+              <Switch checked={form.show_review} onCheckedChange={(v) => setForm((f) => ({ ...f, show_review: v }))} data-testid="tryout-show-review" />
             </div>
             <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] p-3">
               <div><Label>Terbitkan untuk siswa</Label><p className="text-xs text-[#94A3B8]">Siswa hanya melihat Try Out yang terbit.</p></div>
