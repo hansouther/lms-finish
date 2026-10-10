@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Clock, ChevronLeft, ChevronRight, Send, GraduationCap, AlertTriangle } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight, Send, GraduationCap, AlertTriangle, ShieldAlert } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import FullScreenLoader from "@/components/FullScreenLoader";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,10 @@ import MathText, { QuestionImage } from "@/components/common/MathText";
 import { TfMultiAnswer } from "@/components/common/TfMulti";
 import { tfLabels } from "@/lib/tf";
 import { toast } from "sonner";
+import useTabGuard from "@/hooks/useTabGuard";
+import { stopAlarm } from "@/lib/alarm";
+
+const MAX_VIOLATIONS = 5;
 
 function fmtTime(s) {
   const m = Math.floor(s / 60);
@@ -47,6 +51,10 @@ export default function TryoutEngine() {
   const submittedRef = useRef(false);
   const [saveState, setSaveState] = useState({ status: "idle", at: null });
   const dirtyRef = useRef(false);
+  const [violations, setViolations] = useState(0);
+  const [warnOpen, setWarnOpen] = useState(false);
+  const answersRef = useRef({});
+  answersRef.current = answers;
 
   const doSubmit = useCallback(async () => {
     if (submittedRef.current) return;
@@ -80,6 +88,7 @@ export default function TryoutEngine() {
         if (localAnswers) dirtyRef.current = true;
         setSaveState({ status: att.last_saved_at ? "saved" : "idle", at: att.last_saved_at || null });
         setTimeLeft(att.remaining_seconds ?? (t.duration_minutes || 60) * 60);
+        setViolations(att.tab_violations || 0);
       } catch (e) {
         toast.error(apiError(e));
         navigate("/student/tryouts", { replace: true });
@@ -122,6 +131,28 @@ export default function TryoutEngine() {
     return () => clearInterval(timer);
   }, [timeLeft, doSubmit]);
 
+  useTabGuard(!!attemptId && tryout?.kind !== "exercise", async () => {
+    if (submittedRef.current) return stopAlarm();
+    try {
+      const { data } = await api.post(`/student/attempts/${attemptId}/violation`, { answers: answersRef.current });
+      if (data.auto_submitted) {
+        submittedRef.current = true;
+        stopAlarm();
+        localStorage.removeItem(`tryout_${attemptId}_answers`);
+        toast.error(`Anda keluar tab ${data.count} kali. Try Out otomatis dikumpulkan.`);
+        navigate(`/student/results/${attemptId}`, { replace: true });
+        return;
+      }
+      setViolations(data.count);
+    } catch {
+      setViolations((v) => Math.min(v + 1, MAX_VIOLATIONS - 1));
+    }
+    setWarnOpen(true);
+  });
+
+  const continueExam = () => { stopAlarm(); setWarnOpen(false); };
+  const finishFromWarning = () => { stopAlarm(); setWarnOpen(false); doSubmit(); };
+
   if (!tryout) return <FullScreenLoader label="Menyiapkan soal..." />;
 
   const q = tryout.questions[idx];
@@ -157,6 +188,11 @@ export default function TryoutEngine() {
         </div>
         <div className="flex items-center gap-3">
         <SaveIndicator state={saveState} />
+        {tryout.kind !== "exercise" && (
+          <span className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold ${violations > 0 ? "bg-red-50 text-red-600" : "bg-[#EFF6F8] text-[#475569]"}`} title="Jumlah peringatan keluar/pindah tab" data-testid="exam-violation-counter">
+            <ShieldAlert className="h-3.5 w-3.5" /> {violations}/{MAX_VIOLATIONS}
+          </span>
+        )}
         <div className={`flex items-center gap-2 rounded-full px-4 py-2 font-mono2 font-bold ${timeLeft < 60 ? "bg-red-50 text-red-600" : "bg-[#E6F5F8] text-[#0E7490]"}`} data-testid="exam-timer">
           <Clock className="h-4 w-4" /> {fmtTime(timeLeft)}
         </div>
@@ -234,6 +270,28 @@ export default function TryoutEngine() {
           <Button onClick={() => setConfirmOpen(true)} className="w-full mt-5 rounded-full bg-[#10B981] hover:bg-[#0ea371]" data-testid="submit-exam-side"><Send className="h-4 w-4" /> Kumpulkan</Button>
         </aside>
       </div>
+
+      <AlertDialog open={warnOpen}>
+        <AlertDialogContent className="border-red-300" data-testid="tab-warning-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600"><ShieldAlert className="h-5 w-5" /> Peringatan {violations} dari {MAX_VIOLATIONS}: Anda meninggalkan halaman Try Out</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-[#475569]">
+                <p>Sistem mendeteksi Anda berpindah atau keluar dari tab Try Out. Tindakan ini tercatat dan dapat dilihat oleh admin.</p>
+                <p className="font-semibold text-red-600" data-testid="tab-warning-remaining">
+                  {MAX_VIOLATIONS - violations > 1 ? `Sisa ${MAX_VIOLATIONS - violations - 1} peringatan lagi. ` : "Ini peringatan terakhir. "}
+                  Jika keluar tab {MAX_VIOLATIONS} kali, Try Out akan otomatis diselesaikan & dikumpulkan.
+                </p>
+                <p>Apakah Anda ingin menyelesaikan Try Out sekarang atau tetap melanjutkan?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={finishFromWarning} disabled={submitting} data-testid="tab-warning-finish">Selesaikan & Kumpulkan</AlertDialogCancel>
+            <AlertDialogAction onClick={continueExam} className="bg-[#0E7490] hover:bg-[#0B5C74]" data-testid="tab-warning-continue">Tetap Lanjutkan</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

@@ -92,6 +92,8 @@ class TryoutBody(BaseModel):
     irt_scale: str = irt.DEFAULT_SCALE  # snbt | tka | raw | custom
     irt_scale_custom: Optional[dict] = None  # {min, max, mean, sd} bila custom
     price: int = 0  # harga Try Out (Rupiah); 0 = gratis
+    shuffle_questions: bool = False
+    shuffle_options: bool = False
 
 
 class IrtScaleBody(BaseModel):
@@ -133,6 +135,10 @@ class QuestionBody(BaseModel):
     order: int = 0
     competency: str = "umum"  # numerasi | literasi | umum (AKM)
     difficulty_label: Optional[str] = None  # mudah | sedang | sulit (label manual untuk IRT)
+
+
+class CopyQuestionsBody(BaseModel):
+    question_ids: List[str]
 
 
 class BulkCompetencyBody(BaseModel):
@@ -483,6 +489,7 @@ async def set_irt_scale(tryout_id: str, body: IrtScaleBody, user: dict = Depends
 async def delete_tryout(tryout_id: str, user: dict = Depends(admin_only)):
     await db.tryouts.delete_one({"id": tryout_id})
     await db.questions.delete_many({"tryout_id": tryout_id})
+    await db.tryout_violations.delete_many({"tryout_id": tryout_id})
     return {"ok": True}
 
 
@@ -507,6 +514,33 @@ async def create_question(tryout_id: str, body: QuestionBody, user: dict = Depen
         doc["order"] = count + 1
     await db.questions.insert_one(doc)
     return {k: v for k, v in doc.items() if k != "_id"}
+
+
+@router.get("/question-bank")
+async def question_bank(exclude: Optional[str] = None, user: dict = Depends(admin_only)):
+    tryouts = await db.tryouts.find({"id": {"$ne": exclude}}, {"_id": 0, "id": 1, "title": 1, "subject": 1, "kind": 1}).sort("created_at", -1).to_list(500)
+    qs = await db.questions.find({"tryout_id": {"$in": [t["id"] for t in tryouts]}},
+                                 {"_id": 0, "id": 1, "tryout_id": 1, "type": 1, "text": 1, "points": 1, "competency": 1, "order": 1}).sort("order", 1).to_list(20000)
+    by_t = {}
+    for q in qs:
+        by_t.setdefault(q["tryout_id"], []).append(q)
+    return [{**t, "questions": by_t[t["id"]]} for t in tryouts if by_t.get(t["id"])]
+
+
+@router.post("/tryouts/{tryout_id}/questions/copy")
+async def copy_questions(tryout_id: str, body: CopyQuestionsBody, user: dict = Depends(admin_only)):
+    if not await db.tryouts.find_one({"id": tryout_id}):
+        raise HTTPException(status_code=404, detail="Try Out tidak ditemukan")
+    src = await db.questions.find({"id": {"$in": body.question_ids}, "tryout_id": {"$ne": tryout_id}}, {"_id": 0}).sort("order", 1).to_list(5000)
+    count = await db.questions.count_documents({"tryout_id": tryout_id})
+    docs = []
+    for i, q in enumerate(src):
+        docs.append({**q, "id": new_id(), "tryout_id": tryout_id, "order": count + i + 1, "copied_from": q["id"],
+                     "irt_a": None, "irt_b": None, "irt_c": None, "irt_calibrated": False,
+                     "p_value": None, "point_biserial": None, "response_count": 0})
+    if docs:
+        await db.questions.insert_many(docs)
+    return {"copied": len(docs)}
 
 
 @router.put("/questions/{question_id}")
@@ -610,9 +644,17 @@ async def tryout_results(tryout_id: str, user: dict = Depends(admin_only)):
     sids = list({a["student_id"] for a in attempts})
     students = await db.users.find({"id": {"$in": sids}}, {"_id": 0, "id": 1, "name": 1, "email": 1}).to_list(2000)
     smap = {s["id"]: s for s in students}
+    cheat = await _cheat_map(tryout_id)
     for a in attempts:
         a["student"] = smap.get(a["student_id"])
+        a["cheat_total"] = cheat.get(a["student_id"], 0)
+        a["tab_violations"] = a.get("tab_violations", 0)
     return sorted(attempts, key=lambda a: a.get("percentage", 0), reverse=True)
+
+
+async def _cheat_map(tryout_id: str) -> dict:
+    rows = await db.tryout_violations.find({"tryout_id": tryout_id}, {"_id": 0}).to_list(10000)
+    return {r["student_id"]: r.get("total", 0) for r in rows}
 
 
 @router.get("/tryouts/{tryout_id}/monitor")
@@ -625,6 +667,7 @@ async def tryout_monitor(tryout_id: str, user: dict = Depends(admin_only)):
     grants = await db.tryout_retakes.find({"tryout_id": tryout_id, "used": False}, {"_id": 0}).to_list(5000)
     sids = list({a["student_id"] for a in attempts} | {g["student_id"] for g in grants})
     smap = {u["id"]: u for u in await db.users.find({"id": {"$in": sids}}, {"_id": 0, "id": 1, "name": 1, "email": 1}).to_list(5000)}
+    cheat = await _cheat_map(tryout_id)
     rows = []
     for a in attempts:
         answers = a.get("answers") or {}
@@ -639,12 +682,15 @@ async def tryout_monitor(tryout_id: str, user: dict = Depends(admin_only)):
             "last_saved_at": a.get("last_saved_at") or (a.get("submitted_at") if a["status"] == "submitted" else None),
             "remaining_seconds": left, "percentage": a.get("percentage") if a["status"] == "submitted" else None,
             "retake": bool(a.get("bypass_schedule")),
+            "tab_violations": a.get("tab_violations", 0), "cheat_total": cheat.get(a["student_id"], 0),
+            "auto_submitted": a.get("auto_submit_reason") == "tab_violation",
         })
     for g in grants:
         rows.append({"attempt_id": None, "student": smap.get(g["student_id"]), "student_id": g["student_id"],
                      "status": "retake_pending", "answered_count": 0, "total_questions": total_q,
                      "started_at": None, "submitted_at": None, "last_saved_at": None, "remaining_seconds": 0,
-                     "percentage": None, "retake": True, "granted_at": g.get("created_at")})
+                     "percentage": None, "retake": True, "granted_at": g.get("created_at"),
+                     "tab_violations": 0, "cheat_total": cheat.get(g["student_id"], 0), "auto_submitted": False})
     order = {"in_progress": 0, "expired": 1, "retake_pending": 2, "submitted": 3}
     rows.sort(key=lambda r: (order.get(r["status"], 9), (r["student"] or {}).get("name") or ""))
     summary = {k: sum(1 for r in rows if r["status"] == k) for k in order}

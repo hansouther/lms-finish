@@ -8,6 +8,7 @@ import ConfirmButton from "@/components/common/ConfirmButton";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateTime } from "@/lib/format";
+import CheatTag from "@/components/common/CheatTag";
 import { toast } from "sonner";
 
 const STATUS = {
@@ -110,6 +111,7 @@ export default function TryoutMonitor() {
                       <p className="font-medium text-[#0A1128]">{r.student?.name || "-"}</p>
                       <p className="text-xs text-[#94A3B8]">{r.student?.email}</p>
                       {r.retake && r.status !== "retake_pending" && <span className="text-[10px] font-semibold text-[#7C3AED]">Pengulangan</span>}
+                      <CheatTag total={r.cheat_total} current={r.tab_violations} auto={r.auto_submitted} testid={`monitor-cheat-${i}`} />
                     </TableCell>
                     <TableCell><span className="rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap" style={{ color: st[1], backgroundColor: st[2] }} data-testid={`monitor-status-${i}`}>{st[0]}</span></TableCell>
                     <TableCell className="min-w-[160px]">

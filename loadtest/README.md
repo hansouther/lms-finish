@@ -17,7 +17,7 @@ python seed_loadtest.py 300
 
 # 2a) Jalankan penguji bawaan (default target = preview)
 python run_loadtest.py <BASE_URL> 300 lt_tryout
-#   contoh preview : python run_loadtest.py https://migrasi-mandiri.preview.emergentagent.com 300
+#   contoh preview : python run_loadtest.py https://ujian-aman-2.preview.emergentagent.com 300
 #   contoh produksi: python run_loadtest.py https://adaptive-edu-portal.emergent.host 300
 
 # 2b) ATAU pakai k6 (lebih realistis, ada ramp-up 30s)

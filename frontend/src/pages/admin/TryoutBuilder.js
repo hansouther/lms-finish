@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, HelpCircle, CheckCircle2, X, Upload, FileDown, Tag, FileSpreadsheet, Gauge, ImagePlus, Sigma, Loader2 } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, HelpCircle, CheckCircle2, X, Upload, FileDown, Tag, FileSpreadsheet, Gauge, ImagePlus, Sigma, Loader2, Library } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
 import api, { apiError } from "@/lib/api";
 import { Loading, Empty } from "@/components/common/States";
@@ -20,6 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import QuestionBankDialog from "@/components/common/QuestionBankDialog";
 
 const TYPES = [
   { v: "single", l: "Pilihan Ganda" },
@@ -61,6 +62,7 @@ export default function TryoutBuilder() {
   const [bulkDiff, setBulkDiff] = useState("sedang");
   const [blueprintVersion, setBlueprintVersion] = useState(0);
   const [calibrating, setCalibrating] = useState(false);
+  const [bankOpen, setBankOpen] = useState(false);
   const bumpBlueprint = () => setBlueprintVersion((v) => v + 1);
 
   const toggleSelect = (qid) => setSelected((s) => { const n = new Set(s); n.has(qid) ? n.delete(qid) : n.add(qid); return n; });
@@ -208,6 +210,8 @@ export default function TryoutBuilder() {
           <Button variant="outline" onClick={downloadTemplateXlsx} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="download-template-xlsx"><FileSpreadsheet className="h-4 w-4" /> Template Excel</Button>
           <Button variant="outline" onClick={() => fileRef.current?.click()} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="import-questions"><Upload className="h-4 w-4" /> Impor CSV/Excel/ZIP</Button>
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.zip" className="hidden" onChange={onImport} data-testid="import-file" />
+          <Button variant="outline" onClick={() => setBankOpen(true)} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="open-question-bank"><Library className="h-4 w-4" /> Ambil dari Bank Soal</Button>
+          <QuestionBankDialog tryoutId={id} open={bankOpen} onOpenChange={setBankOpen} onCopied={() => { refetch(); bumpBlueprint(); }} />
           <Button onClick={openNew} className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" data-testid="add-question-btn"><Plus className="h-4 w-4" /> Tambah Soal</Button>
         </div>
       </div>

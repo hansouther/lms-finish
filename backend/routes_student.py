@@ -333,6 +333,14 @@ async def tryout_detail(tryout_id: str, user: dict = Depends(student_only)):
         for q in questions:
             if q.get("options") and q.get("type") != "truefalse_multi":
                 random.shuffle(q["options"])
+    elif t.get("shuffle_questions") or t.get("shuffle_options"):
+        rng = random.Random(f"{user['id']}:{tryout_id}")
+        if t.get("shuffle_questions"):
+            rng.shuffle(questions)
+        if t.get("shuffle_options"):
+            for q in questions:
+                if q.get("options") and q.get("type") in ("single", "multiple"):
+                    rng.shuffle(q["options"])
     t["questions"] = [strip_answers(q) for q in questions]
     return t
 
@@ -380,6 +388,7 @@ async def start_attempt(tryout_id: str, user: dict = Depends(student_only)):
         "bypass_schedule": bool(grant),
         "answered_count": 0,
         "last_saved_at": None,
+        "tab_violations": 0,
     }
     await db.attempts.insert_one(attempt)
     if grant:
@@ -416,6 +425,22 @@ async def _recalibrate_tryout(tryout_id: str):
         await db.questions.update_one({"id": qid}, {"$set": p})
 
 
+async def _finalize(attempt: dict, answers: dict, background: BackgroundTasks, extra: dict = None):
+    questions = await db.questions.find({"tryout_id": attempt["tryout_id"]}, {"_id": 0}).to_list(200)
+    tryout = await db.tryouts.find_one({"id": attempt["tryout_id"]}, {"_id": 0})
+    result = grade_attempt(questions, answers)
+    irt_score = irt.score_attempt(questions, result.get("per_question"), irt.resolve_scale(tryout))
+    await db.attempts.update_one(
+        {"id": attempt["id"]},
+        {"$set": {"answers": answers, "status": "submitted", "submitted_at": now_iso(),
+                  **result, **irt_score, **(extra or {})}},
+    )
+    # Kalibrasi ulang parameter IRT secara otomatis dari data jawaban terbaru
+    background.add_task(_recalibrate_tryout, attempt["tryout_id"])
+    return {"ok": True, "score": result["score"], "max_score": result["max_score"],
+            "percentage": result["percentage"], **irt_score}
+
+
 @router.post("/attempts/{attempt_id}/submit")
 async def submit_attempt(attempt_id: str, body: SubmitBody, background: BackgroundTasks, user: dict = Depends(student_only)):
     attempt = await db.attempts.find_one({"id": attempt_id, "student_id": user["id"]}, {"_id": 0})
@@ -423,24 +448,34 @@ async def submit_attempt(attempt_id: str, body: SubmitBody, background: Backgrou
         raise HTTPException(status_code=404, detail="Percobaan tidak ditemukan")
     if attempt["status"] == "submitted":
         raise HTTPException(status_code=400, detail="Percobaan sudah dikumpulkan")
-    questions = await db.questions.find({"tryout_id": attempt["tryout_id"]}, {"_id": 0}).to_list(200)
-    tryout = await db.tryouts.find_one({"id": attempt["tryout_id"]}, {"_id": 0})
-    result = grade_attempt(questions, body.answers)
-    irt_score = irt.score_attempt(questions, result.get("per_question"), irt.resolve_scale(tryout))
-    await db.attempts.update_one(
-        {"id": attempt_id},
-        {"$set": {
-            "answers": body.answers,
-            "status": "submitted",
-            "submitted_at": now_iso(),
-            **result,
-            **irt_score,
-        }},
-    )
-    # Kalibrasi ulang parameter IRT secara otomatis dari data jawaban terbaru
-    background.add_task(_recalibrate_tryout, attempt["tryout_id"])
-    return {"ok": True, "score": result["score"], "max_score": result["max_score"],
-            "percentage": result["percentage"], **irt_score}
+    return await _finalize(attempt, body.answers, background)
+
+
+MAX_TAB_VIOLATIONS = 5
+
+
+@router.post("/attempts/{attempt_id}/violation")
+async def tab_violation(attempt_id: str, body: SubmitBody, background: BackgroundTasks, user: dict = Depends(student_only)):
+    attempt = await db.attempts.find_one({"id": attempt_id, "student_id": user["id"]}, {"_id": 0})
+    if not attempt:
+        raise HTTPException(status_code=404, detail="Percobaan tidak ditemukan")
+    if attempt["status"] != "in_progress":
+        raise HTTPException(status_code=409, detail="Percobaan sudah dikumpulkan")
+    t = await db.tryouts.find_one({"id": attempt["tryout_id"]}, {"_id": 0, "kind": 1})
+    if (t or {}).get("kind") == "exercise":
+        raise HTTPException(status_code=400, detail="Peringatan pindah tab hanya berlaku untuk Try Out")
+    updated = await db.attempts.find_one_and_update(
+        {"id": attempt_id}, {"$inc": {"tab_violations": 1}, "$set": {"last_violation_at": now_iso()}},
+        projection={"_id": 0, "tab_violations": 1}, return_document=True)
+    count = updated["tab_violations"]
+    await db.tryout_violations.update_one(
+        {"tryout_id": attempt["tryout_id"], "student_id": user["id"]},
+        {"$inc": {"total": 1}, "$set": {"last_at": now_iso()}}, upsert=True)
+    out = {"count": count, "max": MAX_TAB_VIOLATIONS, "auto_submitted": False}
+    if count >= MAX_TAB_VIOLATIONS:
+        res = await _finalize(attempt, body.answers, background, {"auto_submit_reason": "tab_violation"})
+        out.update(auto_submitted=True, percentage=res["percentage"])
+    return out
 
 
 @router.get("/attempts")

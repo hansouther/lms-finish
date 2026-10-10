@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, FileText, Settings2, BarChart3, HelpCircle, Users, Activity, CalendarClock } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, Settings2, BarChart3, HelpCircle, Users, Activity, CalendarClock, Shuffle } from "lucide-react";
 import useFetch from "@/hooks/useFetch";
 import api, { apiError } from "@/lib/api";
 import PageHeader from "@/components/common/PageHeader";
@@ -16,7 +16,7 @@ import IrtScaleFields, { EMPTY_CUSTOM, toCustomPayload, SCALE_PRESETS } from "@/
 import { formatRupiah, formatDateTime, toLocalInput, fromLocalInput } from "@/lib/format";
 import { toast } from "sonner";
 
-const EMPTY = { title: "", description: "", subject: "", duration_minutes: 60, published: false, irt_scale: "snbt", irt_scale_custom: EMPTY_CUSTOM, price: 0, start_at: "", end_at: "" };
+const EMPTY = { title: "", description: "", subject: "", duration_minutes: 60, published: false, irt_scale: "snbt", irt_scale_custom: EMPTY_CUSTOM, price: 0, start_at: "", end_at: "", shuffle_questions: false, shuffle_options: false };
 const SCHED = { upcoming: ["Belum dibuka", "#C9A227", "#FBF3DC"], open: ["Dibuka", "#10B981", "#ECFDF5"], closed: ["Ditutup", "#EF4444", "#FEF2F2"] };
 const scaleLabel = (t) => (SCALE_PRESETS.find((p) => p.key === (t.irt_scale || "snbt")) || SCALE_PRESETS[0]).label;
 
@@ -29,7 +29,7 @@ export default function ManageTryouts() {
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e?.target ? e.target.value : e }));
 
   const openNew = () => { setForm(EMPTY); setEditId(null); setOpen(true); };
-  const openEdit = (t) => { setForm({ title: t.title, description: t.description || "", subject: t.subject, duration_minutes: t.duration_minutes, published: t.published, irt_scale: t.irt_scale || "snbt", irt_scale_custom: t.irt_scale_custom || EMPTY_CUSTOM, price: t.price || 0, start_at: toLocalInput(t.start_at), end_at: toLocalInput(t.end_at) }); setEditId(t.id); setOpen(true); };
+  const openEdit = (t) => { setForm({ title: t.title, description: t.description || "", subject: t.subject, duration_minutes: t.duration_minutes, published: t.published, irt_scale: t.irt_scale || "snbt", irt_scale_custom: t.irt_scale_custom || EMPTY_CUSTOM, price: t.price || 0, start_at: toLocalInput(t.start_at), end_at: toLocalInput(t.end_at), shuffle_questions: !!t.shuffle_questions, shuffle_options: !!t.shuffle_options }); setEditId(t.id); setOpen(true); };
 
   const save = async () => {
     if (form.start_at && form.end_at && new Date(form.end_at) <= new Date(form.start_at)) return toast.error("Waktu tutup harus setelah waktu buka");
@@ -72,7 +72,9 @@ export default function ManageTryouts() {
                 {SCHED[t.schedule_status] && <span className="ml-1 rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ color: SCHED[t.schedule_status][1], backgroundColor: SCHED[t.schedule_status][2] }}>{SCHED[t.schedule_status][0]}</span>}
                 {t.in_progress_count > 0 && <span className="ml-1 rounded-full bg-[#E6F5F8] px-2 py-0.5 text-[10px] font-semibold text-[#0E7490]">{t.in_progress_count} sedang mengerjakan</span>}
               </div>
-              <div className="mt-2"><span className="inline-flex items-center rounded-full border border-[#0E7490]/30 bg-[#E6F5F8] px-2.5 py-0.5 text-[11px] font-semibold text-[#0E7490]" data-testid={`tryout-scale-${t.id}`}>Skala IRT: {scaleLabel(t)}</span></div>
+              <div className="mt-2 flex flex-wrap gap-1.5"><span className="inline-flex items-center rounded-full border border-[#0E7490]/30 bg-[#E6F5F8] px-2.5 py-0.5 text-[11px] font-semibold text-[#0E7490]" data-testid={`tryout-scale-${t.id}`}>Skala IRT: {scaleLabel(t)}</span>
+                {(t.shuffle_questions || t.shuffle_options) && <span className="inline-flex items-center gap-1 rounded-full border border-[#C9A227]/40 bg-[#FBF3DC] px-2.5 py-0.5 text-[11px] font-semibold text-[#8A6D12]" data-testid={`tryout-shuffle-${t.id}`}><Shuffle className="h-3 w-3" /> Acak {[t.shuffle_questions && "soal", t.shuffle_options && "pilihan"].filter(Boolean).join(" & ")}</span>}
+              </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => navigate(`/admin/tryouts/${t.id}/builder`)} className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" data-testid={`build-${t.id}`}><Settings2 className="h-4 w-4" /> Kelola Soal</Button>
                 <Button size="sm" variant="outline" onClick={() => navigate(`/admin/tryouts/${t.id}/results`)} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid={`results-${t.id}`}><BarChart3 className="h-4 w-4" /> Hasil</Button>
@@ -109,6 +111,17 @@ export default function ManageTryouts() {
               <p className="mt-1 text-xs text-[#94A3B8]">Try Out berbayar dibuka setelah siswa membayar via Midtrans (VA, QRIS, GoPay, kartu).</p>
             </div>
             <IrtScaleFields value={form.irt_scale} custom={form.irt_scale_custom} onChange={(v) => setForm((f) => ({ ...f, irt_scale: v }))} onCustomChange={(c) => setForm((f) => ({ ...f, irt_scale_custom: c }))} testIdPrefix="tryout-irt-scale" />
+            <div className="rounded-lg border border-[#E2E8F0] p-3 space-y-3" data-testid="tryout-shuffle-fields">
+              <Label className="flex items-center gap-1.5"><Shuffle className="h-4 w-4 text-[#0E7490]" /> Pengacakan (anti mencontek)</Label>
+              <div className="flex items-center justify-between">
+                <div><p className="text-sm text-[#0A1128]">Acak urutan soal</p><p className="text-xs text-[#94A3B8]">Setiap siswa mendapat urutan soal berbeda.</p></div>
+                <Switch checked={form.shuffle_questions} onCheckedChange={(v) => setForm((f) => ({ ...f, shuffle_questions: v }))} data-testid="tryout-shuffle-questions" />
+              </div>
+              <div className="flex items-center justify-between">
+                <div><p className="text-sm text-[#0A1128]">Acak urutan pilihan jawaban</p><p className="text-xs text-[#94A3B8]">Berlaku untuk Pilihan Ganda & Pilihan Ganda Kompleks.</p></div>
+                <Switch checked={form.shuffle_options} onCheckedChange={(v) => setForm((f) => ({ ...f, shuffle_options: v }))} data-testid="tryout-shuffle-options" />
+              </div>
+            </div>
             <div className="flex items-center justify-between rounded-lg border border-[#E2E8F0] p-3">
               <div><Label>Terbitkan untuk siswa</Label><p className="text-xs text-[#94A3B8]">Siswa hanya melihat Try Out yang terbit.</p></div>
               <Switch checked={form.published} onCheckedChange={(v) => setForm((f) => ({ ...f, published: v }))} data-testid="tryout-published" />
