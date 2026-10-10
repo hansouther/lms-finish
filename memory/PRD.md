@@ -60,3 +60,11 @@ Original: hapus semua ketergantungan Emergent (AI, storage, auth, email) agar bi
 - Siswa (email & Google) langsung approved; migrasi startup: siswa pending → approved. Proktor/tentor tetap diverifikasi
 - /lengkapi-biodata (CompleteBiodata.js): wajib isi sekolah, kelas, WA, tujuan + pernyataan kejujuran; ProtectedRoute redirect bila school_id/grade kosong
 - Export repo kedua (LMS-test1) diperbarui: /app/frontend/public/downloads/binara-update.zip & .patch
+
+## Update Jun 2026 — Pengaturan Website (Admin)
+- routes_site didaftarkan di server.py; halaman /admin/site-settings + menu sidebar "Pengaturan Website"
+- Admin atur: nama, tagline, footer, logo, favicon (ikon tab), foto hero/login/OG, loading screen (on/off, logo, judul, pesan, warna latar/teks/aksen, gaya, durasi min)
+- Penyimpanan Cloudflare R2 (R2_* di backend/.env); unggahan mengembalikan URL publik R2_PUBLIC_URL langsung (beban server rendah saat trafik tinggi)
+- Teruji: iteration_34 (backend & frontend 100%)
+## Backlog
+- Gambar landing tambahan (galeri/section lain) bila nanti ditambahkan

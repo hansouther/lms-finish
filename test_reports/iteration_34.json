@@ -1,0 +1,37 @@
+{
+  "summary": "End-to-end testing of the new 'Pengaturan Website' (Site Settings) feature covering backend validations, R2 upload integration, admin UI, boot loader behaviour, and landing/login integration. Backend: 9/9 relevant tests passed (1 skipped for non-admin because no student seed was accepted). Frontend: all critical flows pass — sidebar link 'Pengaturan Website' routes to /admin/site-settings (data-testid site-settings-page), uploads for logo/favicon/hero return R2 pub-74b9f7bee68a URLs that are publicly fetchable, save shows success toast, landing page updates title/favicon/logo (site-logo-img) and hero image, boot loader renders with configured bg + message and is removed after min duration, disabling loader-enabled-switch truly removes #boot-loader on reload, and login page shows login-side-image when configured (only visible in logged-out state and viewport >= lg). Clean restore performed via admin API — site_name='Binara LMS' with all URLs cleared and loader defaults applied.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/public/site-settings", "issue": "Cache-Control max-age=30 can delay visibility of newly saved settings for logged-out users relying on the API (admin UI unaffected because updateSiteLocal updates localStorage synchronously). Consider lowering max-age or adding ETag."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter34_site_settings.py",
+    "/app/test_reports/pytest/iter34.xml"
+  ],
+  "action_items": [
+    "Optional: reduce Cache-Control max-age on /api/public/site-settings or expose a cache-bust mechanism after save."
+  ],
+  "critical_code_review_comments": [
+    "routes_site.py validator accepts any https:// URL for image fields. This is fine for the R2 bucket but allows arbitrary external hosts; consider whitelisting the configured R2 public base URL.",
+    "/api/site-assets/{name} fallback endpoint is dead code when R2 is configured but still queries db.files for every request; harmless but worth noting.",
+    "public/index.html boot script and site.js duplicate most settings logic (favicon, title, loader colors). Fine for perf, but any change requires updates in two places."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter34_site_settings.py",
+    "/app/test_reports/iteration_34.json"
+  ],
+  "success_rate": {"backend": "100% (9/9 relevant, 1 intentionally skipped)", "frontend": "100%"},
+  "test_credentials": "admin@lms.id / Admin@12345",
+  "seed_data_creation": "None. All test images uploaded during the run were removed; site settings restored to Binara LMS defaults.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Site settings feature is fully wired. Admin page /admin/site-settings uses data-testids: site-settings-page, site-name-input, site-tagline-input, site-footer-input, site-logo-{input,upload,preview,remove}, site-favicon-*, site-hero-*, site-login-image-*, site-og-*, loader-enabled-switch, loader-title-input, loader-message-input, loader-style-select, loader-{bg,text,accent}-color + -picker, loader-min-input, loader-logo-*, loader-preview, loader-reset, site-settings-save. Boot loader lives in /app/frontend/public/index.html and reads window.localStorage['site_settings_cache']. R2 URLs are returned via S3 PUBLIC_BASE_URL=https://pub-74b9f7bee68a4334803c36aaf1ec775c.r2.dev. Important testing note: Login.js only renders login-side-image on viewport>=lg AND in a logged-out session (otherwise /login redirects to the role dashboard). The shadcn Switch toggles correctly with plain .click() but Playwright click(force=True) does NOT flip aria-checked — use .click() without force or keyboard Space.",
+  "rca of the issue": "No product bugs found. The only testing hiccup encountered was: (a) switch not toggling under click(force=True) — pure test harness quirk with Radix Switch; use plain click. (b) login-side-image appearing missing when the admin session is still active — /login auto-redirects to dashboard; must clear cookies/localStorage before verifying."
+}
