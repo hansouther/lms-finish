@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Upload, Trash2, Save, Globe, Image as ImageIcon, Timer } from "lucide-react";
+import { Loader2, Upload, Trash2, Save, Globe, Image as ImageIcon, Timer, HardDrive } from "lucide-react";
 import api, { apiError } from "@/lib/api";
 import { assetUrl, updateSiteLocal, DEFAULT_SITE, isVideo } from "@/lib/site";
 import PageHeader from "@/components/common/PageHeader";
@@ -102,6 +102,28 @@ function LoaderPreview({ f }) {
       {ind}
       <p className="text-xs opacity-75 max-w-xs">{f.loader_message}</p>
     </div>
+  );
+}
+
+function StorageStatus() {
+  const [st, setSt] = useState(null);
+  const [tick, setTick] = useState(0);
+  useEffect(() => { setSt(null); api.get("/admin/storage-status").then((r) => setSt(r.data)).catch((e) => setSt({ ok: false, error: apiError(e) })); }, [tick]);
+  const r2 = st?.provider === "cloudflare_r2";
+  const good = st && r2 && st.ok;
+  return (
+    <Section icon={HardDrive} title="Penyimpanan Berkas" desc="Semua PDF, video, gambar soal, dokumen, logo & loading screen disimpan di sini.">
+      {!st ? <Loader2 className="h-4 w-4 animate-spin text-[#94A3B8]" /> : (
+        <div className={`rounded-lg p-3 text-sm ${good ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-700"}`} data-testid="storage-status">
+          <p className="font-semibold">{good ? "Cloudflare R2 aktif & berfungsi" : r2 ? "Cloudflare R2 bermasalah" : "Cloudflare R2 belum terhubung"}</p>
+          {st.bucket && <p className="text-xs mt-1">Bucket: <span className="font-mono2">{st.bucket}</span></p>}
+          {good && <p className="text-xs mt-1">Video & PDF dibuka langsung dari Cloudflare, tidak membebani server.</p>}
+          {!r2 && <p className="text-xs mt-1">Isi variabel R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, R2_PUBLIC_URL di server.</p>}
+          {st.error && <p className="text-xs mt-1 break-all">{st.error}</p>}
+        </div>
+      )}
+      <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={() => setTick((t) => t + 1)} data-testid="storage-status-refresh">Cek ulang</Button>
+    </Section>
   );
 }
 
@@ -222,6 +244,8 @@ export default function SiteSettings() {
             Kembalikan loading screen bawaan
           </Button>
         </Section>
+
+        <StorageStatus />
       </div>
 
       <div className="fixed bottom-0 inset-x-0 lg:left-64 z-30 border-t border-[#E2E8F0] bg-white/90 backdrop-blur px-4 sm:px-8 py-3 flex justify-end">

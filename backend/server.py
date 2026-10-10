@@ -14,6 +14,7 @@ from database import db, client
 from seed import seed, seed_content, migrate_analysis
 import routes_auth, routes_public, routes_admin, routes_student, routes_tutor, routes_proctor, routes_files, routes_classes, routes_payments
 import routes_site
+import routes_r2
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -43,6 +44,7 @@ upload_folder = os.path.join(ROOT_DIR, "uploads")
 os.makedirs(upload_folder, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=upload_folder), name="uploads")
 
+app.include_router(routes_r2.router)
 app.include_router(routes_auth.router)
 app.include_router(routes_public.router)
 app.include_router(routes_admin.router)

@@ -52,6 +52,8 @@ def _safe(path: str) -> str:
 
 def put_object(path: str, data: bytes, content_type: str) -> dict:
     safe_path = _safe(path)
+    if not s3_client and (os.environ.get("RAILWAY_ENVIRONMENT_NAME") or os.environ.get("RAILWAY_ENVIRONMENT")) and os.environ.get("STORAGE_LOCAL_FALLBACK") != "true":
+        raise RuntimeError("Penyimpanan Cloudflare R2 belum dikonfigurasi (cek R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME di Railway)")
     if s3_client:
         s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=safe_path, Body=data, ContentType=content_type)
     else:
