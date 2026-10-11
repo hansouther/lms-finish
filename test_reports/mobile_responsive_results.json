@@ -1,0 +1,2483 @@
+{
+  "iphone_se": [
+    {
+      "label": "public /",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/"
+    },
+    {
+      "label": "public /login",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/login"
+    },
+    {
+      "label": "public /register",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/register"
+    },
+    {
+      "label": "public /kursus",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/kursus"
+    },
+    {
+      "label": "public /berita",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/berita"
+    },
+    {
+      "label": "public /kalender",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/kalender"
+    },
+    {
+      "label": "admin /admin",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin"
+    },
+    {
+      "label": "admin /admin/news",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin/news"
+    },
+    {
+      "label": "admin /admin/calendar",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin/calendar"
+    },
+    {
+      "label": "admin /admin/courses",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin/courses"
+    },
+    {
+      "label": "admin /admin/schedule",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin/schedule"
+    },
+    {
+      "label": "admin /admin/classes",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin/classes"
+    },
+    {
+      "label": "admin /admin/tryouts",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin/tryouts"
+    },
+    {
+      "label": "admin /admin/broadcasts",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin/broadcasts"
+    },
+    {
+      "label": "admin /admin/partnerships",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin/partnerships"
+    },
+    {
+      "label": "admin /admin/users",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin/users"
+    },
+    {
+      "label": "admin /admin/analysis",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin/analysis"
+    },
+    {
+      "label": "admin /admin/payments",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin/payments"
+    },
+    {
+      "label": "admin /admin/site-settings",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/admin/site-settings"
+    },
+    {
+      "label": "admin hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "siswa /student",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/student"
+    },
+    {
+      "label": "siswa /student/learning",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/student/learning"
+    },
+    {
+      "label": "siswa /student/courses",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/student/courses"
+    },
+    {
+      "label": "siswa /student/tryouts",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/student/tryouts"
+    },
+    {
+      "label": "siswa /student/schedule",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/student/schedule"
+    },
+    {
+      "label": "siswa /student/payments",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/student/payments"
+    },
+    {
+      "label": "siswa hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "tentor /tutor",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/tutor"
+    },
+    {
+      "label": "tentor /tutor/bidding",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/tutor/bidding"
+    },
+    {
+      "label": "tentor /tutor/calendar",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/tutor/calendar"
+    },
+    {
+      "label": "tentor /tutor/classes",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/tutor/classes"
+    },
+    {
+      "label": "tentor /tutor/materials",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/tutor/materials"
+    },
+    {
+      "label": "tentor hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "proktor /proctor",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/proctor"
+    },
+    {
+      "label": "proktor /proctor/monitoring",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/proctor/monitoring"
+    },
+    {
+      "label": "proktor /proctor/analytics",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/proctor/analytics"
+    },
+    {
+      "label": "proktor /proctor/trainings",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/proctor/trainings"
+    },
+    {
+      "label": "proktor /proctor/attendance",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/proctor/attendance"
+    },
+    {
+      "label": "proktor /proctor/weakness",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/proctor/weakness"
+    },
+    {
+      "label": "proktor /proctor/reports",
+      "status": "OK",
+      "sw": 320,
+      "iw": 320,
+      "bw": 320,
+      "url": "/proctor/reports"
+    },
+    {
+      "label": "proktor hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "input font-size (touch>=16px)",
+      "status": "OK"
+    }
+  ],
+  "iphone_14": [
+    {
+      "label": "public /",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/"
+    },
+    {
+      "label": "public /login",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/login"
+    },
+    {
+      "label": "public /register",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/register"
+    },
+    {
+      "label": "public /kursus",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/kursus"
+    },
+    {
+      "label": "public /berita",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/berita"
+    },
+    {
+      "label": "public /kalender",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/kalender"
+    },
+    {
+      "label": "admin /admin",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin"
+    },
+    {
+      "label": "admin /admin/news",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin/news"
+    },
+    {
+      "label": "admin /admin/calendar",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin/calendar"
+    },
+    {
+      "label": "admin /admin/courses",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin/courses"
+    },
+    {
+      "label": "admin /admin/schedule",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin/schedule"
+    },
+    {
+      "label": "admin /admin/classes",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin/classes"
+    },
+    {
+      "label": "admin /admin/tryouts",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin/tryouts"
+    },
+    {
+      "label": "admin /admin/broadcasts",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin/broadcasts"
+    },
+    {
+      "label": "admin /admin/partnerships",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin/partnerships"
+    },
+    {
+      "label": "admin /admin/users",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin/users"
+    },
+    {
+      "label": "admin /admin/analysis",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin/analysis"
+    },
+    {
+      "label": "admin /admin/payments",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin/payments"
+    },
+    {
+      "label": "admin /admin/site-settings",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/admin/site-settings"
+    },
+    {
+      "label": "admin hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "siswa /student",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/student"
+    },
+    {
+      "label": "siswa /student/learning",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/student/learning"
+    },
+    {
+      "label": "siswa /student/courses",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/student/courses"
+    },
+    {
+      "label": "siswa /student/tryouts",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/student/tryouts"
+    },
+    {
+      "label": "siswa /student/schedule",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/student/schedule"
+    },
+    {
+      "label": "siswa /student/payments",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/student/payments"
+    },
+    {
+      "label": "siswa hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "tentor /tutor",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/tutor"
+    },
+    {
+      "label": "tentor /tutor/bidding",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/tutor/bidding"
+    },
+    {
+      "label": "tentor /tutor/calendar",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/tutor/calendar"
+    },
+    {
+      "label": "tentor /tutor/classes",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/tutor/classes"
+    },
+    {
+      "label": "tentor /tutor/materials",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/tutor/materials"
+    },
+    {
+      "label": "tentor hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "proktor /proctor",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/proctor"
+    },
+    {
+      "label": "proktor /proctor/monitoring",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/proctor/monitoring"
+    },
+    {
+      "label": "proktor /proctor/analytics",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/proctor/analytics"
+    },
+    {
+      "label": "proktor /proctor/trainings",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/proctor/trainings"
+    },
+    {
+      "label": "proktor /proctor/attendance",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/proctor/attendance"
+    },
+    {
+      "label": "proktor /proctor/weakness",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/proctor/weakness"
+    },
+    {
+      "label": "proktor /proctor/reports",
+      "status": "OK",
+      "sw": 390,
+      "iw": 390,
+      "bw": 390,
+      "url": "/proctor/reports"
+    },
+    {
+      "label": "proktor hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "input font-size (touch>=16px)",
+      "status": "OK"
+    }
+  ],
+  "android_360": [
+    {
+      "label": "public /",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/"
+    },
+    {
+      "label": "public /login",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/login"
+    },
+    {
+      "label": "public /register",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/register"
+    },
+    {
+      "label": "public /kursus",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/kursus"
+    },
+    {
+      "label": "public /berita",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/berita"
+    },
+    {
+      "label": "public /kalender",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/kalender"
+    },
+    {
+      "label": "admin /admin",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin"
+    },
+    {
+      "label": "admin /admin/news",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/news"
+    },
+    {
+      "label": "admin /admin/calendar",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/calendar"
+    },
+    {
+      "label": "admin /admin/courses",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/courses"
+    },
+    {
+      "label": "admin /admin/schedule",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/schedule"
+    },
+    {
+      "label": "admin /admin/classes",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/classes"
+    },
+    {
+      "label": "admin /admin/tryouts",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/tryouts"
+    },
+    {
+      "label": "admin /admin/broadcasts",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/broadcasts"
+    },
+    {
+      "label": "admin /admin/partnerships",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/partnerships"
+    },
+    {
+      "label": "admin /admin/users",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/users"
+    },
+    {
+      "label": "admin /admin/analysis",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/analysis"
+    },
+    {
+      "label": "admin /admin/payments",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/payments"
+    },
+    {
+      "label": "admin /admin/site-settings",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/site-settings"
+    },
+    {
+      "label": "admin hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "siswa /student",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/student"
+    },
+    {
+      "label": "siswa /student/learning",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/student/learning"
+    },
+    {
+      "label": "siswa /student/courses",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/student/courses"
+    },
+    {
+      "label": "siswa /student/tryouts",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/student/tryouts"
+    },
+    {
+      "label": "siswa /student/schedule",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/student/schedule"
+    },
+    {
+      "label": "siswa /student/payments",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/student/payments"
+    },
+    {
+      "label": "siswa hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "tentor /tutor",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/tutor"
+    },
+    {
+      "label": "tentor /tutor/bidding",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/tutor/bidding"
+    },
+    {
+      "label": "tentor /tutor/calendar",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/tutor/calendar"
+    },
+    {
+      "label": "tentor /tutor/classes",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/tutor/classes"
+    },
+    {
+      "label": "tentor /tutor/materials",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/tutor/materials"
+    },
+    {
+      "label": "tentor hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "proktor /proctor",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor"
+    },
+    {
+      "label": "proktor /proctor/monitoring",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor/monitoring"
+    },
+    {
+      "label": "proktor /proctor/analytics",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor/analytics"
+    },
+    {
+      "label": "proktor /proctor/trainings",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor/trainings"
+    },
+    {
+      "label": "proktor /proctor/attendance",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor/attendance"
+    },
+    {
+      "label": "proktor /proctor/weakness",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor/weakness"
+    },
+    {
+      "label": "proktor /proctor/reports",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor/reports"
+    },
+    {
+      "label": "proktor hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "input font-size (touch>=16px)",
+      "status": "OK"
+    }
+  ],
+  "huawei_360": [
+    {
+      "label": "public /",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/"
+    },
+    {
+      "label": "public /login",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/login"
+    },
+    {
+      "label": "public /register",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/register"
+    },
+    {
+      "label": "public /kursus",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/kursus"
+    },
+    {
+      "label": "public /berita",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/berita"
+    },
+    {
+      "label": "public /kalender",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/kalender"
+    },
+    {
+      "label": "admin /admin",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin"
+    },
+    {
+      "label": "admin /admin/news",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/news"
+    },
+    {
+      "label": "admin /admin/calendar",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/calendar"
+    },
+    {
+      "label": "admin /admin/courses",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/courses"
+    },
+    {
+      "label": "admin /admin/schedule",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/schedule"
+    },
+    {
+      "label": "admin /admin/classes",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/classes"
+    },
+    {
+      "label": "admin /admin/tryouts",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/tryouts"
+    },
+    {
+      "label": "admin /admin/broadcasts",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/broadcasts"
+    },
+    {
+      "label": "admin /admin/partnerships",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/partnerships"
+    },
+    {
+      "label": "admin /admin/users",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/users"
+    },
+    {
+      "label": "admin /admin/analysis",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/analysis"
+    },
+    {
+      "label": "admin /admin/payments",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/payments"
+    },
+    {
+      "label": "admin /admin/site-settings",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/admin/site-settings"
+    },
+    {
+      "label": "admin hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "siswa /student",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/student"
+    },
+    {
+      "label": "siswa /student/learning",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/student/learning"
+    },
+    {
+      "label": "siswa /student/courses",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/student/courses"
+    },
+    {
+      "label": "siswa /student/tryouts",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/student/tryouts"
+    },
+    {
+      "label": "siswa /student/schedule",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/student/schedule"
+    },
+    {
+      "label": "siswa /student/payments",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/student/payments"
+    },
+    {
+      "label": "siswa hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "tentor /tutor",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/tutor"
+    },
+    {
+      "label": "tentor /tutor/bidding",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/tutor/bidding"
+    },
+    {
+      "label": "tentor /tutor/calendar",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/tutor/calendar"
+    },
+    {
+      "label": "tentor /tutor/classes",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/tutor/classes"
+    },
+    {
+      "label": "tentor /tutor/materials",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/tutor/materials"
+    },
+    {
+      "label": "tentor hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "proktor /proctor",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor"
+    },
+    {
+      "label": "proktor /proctor/monitoring",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor/monitoring"
+    },
+    {
+      "label": "proktor /proctor/analytics",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor/analytics"
+    },
+    {
+      "label": "proktor /proctor/trainings",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor/trainings"
+    },
+    {
+      "label": "proktor /proctor/attendance",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor/attendance"
+    },
+    {
+      "label": "proktor /proctor/weakness",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor/weakness"
+    },
+    {
+      "label": "proktor /proctor/reports",
+      "status": "OK",
+      "sw": 360,
+      "iw": 360,
+      "bw": 360,
+      "url": "/proctor/reports"
+    },
+    {
+      "label": "proktor hamburger",
+      "status": "OK"
+    },
+    {
+      "label": "input font-size (touch>=16px)",
+      "status": "OK"
+    }
+  ],
+  "ipad_portrait": [
+    {
+      "label": "public /",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/"
+    },
+    {
+      "label": "public /login",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/login"
+    },
+    {
+      "label": "public /register",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/register"
+    },
+    {
+      "label": "public /kursus",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/kursus"
+    },
+    {
+      "label": "public /berita",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/berita"
+    },
+    {
+      "label": "public /kalender",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/kalender"
+    },
+    {
+      "label": "admin /admin",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin"
+    },
+    {
+      "label": "admin /admin/news",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin/news"
+    },
+    {
+      "label": "admin /admin/calendar",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin/calendar"
+    },
+    {
+      "label": "admin /admin/courses",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin/courses"
+    },
+    {
+      "label": "admin /admin/schedule",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin/schedule"
+    },
+    {
+      "label": "admin /admin/classes",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin/classes"
+    },
+    {
+      "label": "admin /admin/tryouts",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin/tryouts"
+    },
+    {
+      "label": "admin /admin/broadcasts",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin/broadcasts"
+    },
+    {
+      "label": "admin /admin/partnerships",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin/partnerships"
+    },
+    {
+      "label": "admin /admin/users",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin/users"
+    },
+    {
+      "label": "admin /admin/analysis",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin/analysis"
+    },
+    {
+      "label": "admin /admin/payments",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin/payments"
+    },
+    {
+      "label": "admin /admin/site-settings",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/admin/site-settings"
+    },
+    {
+      "label": "siswa /student",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/student"
+    },
+    {
+      "label": "siswa /student/learning",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/student/learning"
+    },
+    {
+      "label": "siswa /student/courses",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/student/courses"
+    },
+    {
+      "label": "siswa /student/tryouts",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/student/tryouts"
+    },
+    {
+      "label": "siswa /student/schedule",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/student/schedule"
+    },
+    {
+      "label": "siswa /student/payments",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/student/payments"
+    },
+    {
+      "label": "tentor /tutor",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/tutor"
+    },
+    {
+      "label": "tentor /tutor/bidding",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/tutor/bidding"
+    },
+    {
+      "label": "tentor /tutor/calendar",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/tutor/calendar"
+    },
+    {
+      "label": "tentor /tutor/classes",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/tutor/classes"
+    },
+    {
+      "label": "tentor /tutor/materials",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/tutor/materials"
+    },
+    {
+      "label": "proktor /proctor",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/proctor"
+    },
+    {
+      "label": "proktor /proctor/monitoring",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/proctor/monitoring"
+    },
+    {
+      "label": "proktor /proctor/analytics",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/proctor/analytics"
+    },
+    {
+      "label": "proktor /proctor/trainings",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/proctor/trainings"
+    },
+    {
+      "label": "proktor /proctor/attendance",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/proctor/attendance"
+    },
+    {
+      "label": "proktor /proctor/weakness",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/proctor/weakness"
+    },
+    {
+      "label": "proktor /proctor/reports",
+      "status": "OK",
+      "sw": 820,
+      "iw": 820,
+      "bw": 820,
+      "url": "/proctor/reports"
+    },
+    {
+      "label": "input font-size (touch>=16px)",
+      "status": "OK"
+    }
+  ],
+  "iphone_land": [
+    {
+      "label": "public /",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/"
+    },
+    {
+      "label": "public /login",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/login"
+    },
+    {
+      "label": "public /register",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/register"
+    },
+    {
+      "label": "public /kursus",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/kursus"
+    },
+    {
+      "label": "public /berita",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/berita"
+    },
+    {
+      "label": "public /kalender",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/kalender"
+    },
+    {
+      "label": "admin /admin",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin"
+    },
+    {
+      "label": "admin /admin/news",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin/news"
+    },
+    {
+      "label": "admin /admin/calendar",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin/calendar"
+    },
+    {
+      "label": "admin /admin/courses",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin/courses"
+    },
+    {
+      "label": "admin /admin/schedule",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin/schedule"
+    },
+    {
+      "label": "admin /admin/classes",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin/classes"
+    },
+    {
+      "label": "admin /admin/tryouts",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin/tryouts"
+    },
+    {
+      "label": "admin /admin/broadcasts",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin/broadcasts"
+    },
+    {
+      "label": "admin /admin/partnerships",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin/partnerships"
+    },
+    {
+      "label": "admin /admin/users",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin/users"
+    },
+    {
+      "label": "admin /admin/analysis",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin/analysis"
+    },
+    {
+      "label": "admin /admin/payments",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin/payments"
+    },
+    {
+      "label": "admin /admin/site-settings",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/admin/site-settings"
+    },
+    {
+      "label": "siswa /student",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/student"
+    },
+    {
+      "label": "siswa /student/learning",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/student/learning"
+    },
+    {
+      "label": "siswa /student/courses",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/student/courses"
+    },
+    {
+      "label": "siswa /student/tryouts",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/student/tryouts"
+    },
+    {
+      "label": "siswa /student/schedule",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/student/schedule"
+    },
+    {
+      "label": "siswa /student/payments",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/student/payments"
+    },
+    {
+      "label": "tentor /tutor",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/tutor"
+    },
+    {
+      "label": "tentor /tutor/bidding",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/tutor/bidding"
+    },
+    {
+      "label": "tentor /tutor/calendar",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/tutor/calendar"
+    },
+    {
+      "label": "tentor /tutor/classes",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/tutor/classes"
+    },
+    {
+      "label": "tentor /tutor/materials",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/tutor/materials"
+    },
+    {
+      "label": "proktor /proctor",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/proctor"
+    },
+    {
+      "label": "proktor /proctor/monitoring",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/proctor/monitoring"
+    },
+    {
+      "label": "proktor /proctor/analytics",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/proctor/analytics"
+    },
+    {
+      "label": "proktor /proctor/trainings",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/proctor/trainings"
+    },
+    {
+      "label": "proktor /proctor/attendance",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/proctor/attendance"
+    },
+    {
+      "label": "proktor /proctor/weakness",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/proctor/weakness"
+    },
+    {
+      "label": "proktor /proctor/reports",
+      "status": "OK",
+      "sw": 844,
+      "iw": 844,
+      "bw": 844,
+      "url": "/proctor/reports"
+    },
+    {
+      "label": "input font-size (touch>=16px)",
+      "status": "OK"
+    }
+  ],
+  "desktop_1366": [
+    {
+      "label": "public /",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/"
+    },
+    {
+      "label": "public /login",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/login"
+    },
+    {
+      "label": "public /register",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/register"
+    },
+    {
+      "label": "public /kursus",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/kursus"
+    },
+    {
+      "label": "public /berita",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/berita"
+    },
+    {
+      "label": "public /kalender",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/kalender"
+    },
+    {
+      "label": "admin /admin",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin"
+    },
+    {
+      "label": "admin /admin/news",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin/news"
+    },
+    {
+      "label": "admin /admin/calendar",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin/calendar"
+    },
+    {
+      "label": "admin /admin/courses",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin/courses"
+    },
+    {
+      "label": "admin /admin/schedule",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin/schedule"
+    },
+    {
+      "label": "admin /admin/classes",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin/classes"
+    },
+    {
+      "label": "admin /admin/tryouts",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin/tryouts"
+    },
+    {
+      "label": "admin /admin/broadcasts",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin/broadcasts"
+    },
+    {
+      "label": "admin /admin/partnerships",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin/partnerships"
+    },
+    {
+      "label": "admin /admin/users",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin/users"
+    },
+    {
+      "label": "admin /admin/analysis",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin/analysis"
+    },
+    {
+      "label": "admin /admin/payments",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin/payments"
+    },
+    {
+      "label": "admin /admin/site-settings",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/admin/site-settings"
+    },
+    {
+      "label": "siswa /student",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/student"
+    },
+    {
+      "label": "siswa /student/learning",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/student/learning"
+    },
+    {
+      "label": "siswa /student/courses",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/student/courses"
+    },
+    {
+      "label": "siswa /student/tryouts",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/student/tryouts"
+    },
+    {
+      "label": "siswa /student/schedule",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/student/schedule"
+    },
+    {
+      "label": "siswa /student/payments",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/student/payments"
+    },
+    {
+      "label": "tentor /tutor",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/tutor"
+    },
+    {
+      "label": "tentor /tutor/bidding",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/tutor/bidding"
+    },
+    {
+      "label": "tentor /tutor/calendar",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/tutor/calendar"
+    },
+    {
+      "label": "tentor /tutor/classes",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/tutor/classes"
+    },
+    {
+      "label": "tentor /tutor/materials",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/tutor/materials"
+    },
+    {
+      "label": "proktor /proctor",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/proctor"
+    },
+    {
+      "label": "proktor /proctor/monitoring",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/proctor/monitoring"
+    },
+    {
+      "label": "proktor /proctor/analytics",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/proctor/analytics"
+    },
+    {
+      "label": "proktor /proctor/trainings",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/proctor/trainings"
+    },
+    {
+      "label": "proktor /proctor/attendance",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/proctor/attendance"
+    },
+    {
+      "label": "proktor /proctor/weakness",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/proctor/weakness"
+    },
+    {
+      "label": "proktor /proctor/reports",
+      "status": "OK",
+      "sw": 1366,
+      "iw": 1366,
+      "bw": 1366,
+      "url": "/proctor/reports"
+    },
+    {
+      "label": "input font-size (desktop)",
+      "status": "14"
+    }
+  ],
+  "desktop_1920": [
+    {
+      "label": "public /",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/"
+    },
+    {
+      "label": "public /login",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/login"
+    },
+    {
+      "label": "public /register",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/register"
+    },
+    {
+      "label": "public /kursus",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/kursus"
+    },
+    {
+      "label": "public /berita",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/berita"
+    },
+    {
+      "label": "public /kalender",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/kalender"
+    },
+    {
+      "label": "admin /admin",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin"
+    },
+    {
+      "label": "admin /admin/news",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin/news"
+    },
+    {
+      "label": "admin /admin/calendar",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin/calendar"
+    },
+    {
+      "label": "admin /admin/courses",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin/courses"
+    },
+    {
+      "label": "admin /admin/schedule",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin/schedule"
+    },
+    {
+      "label": "admin /admin/classes",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin/classes"
+    },
+    {
+      "label": "admin /admin/tryouts",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin/tryouts"
+    },
+    {
+      "label": "admin /admin/broadcasts",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin/broadcasts"
+    },
+    {
+      "label": "admin /admin/partnerships",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin/partnerships"
+    },
+    {
+      "label": "admin /admin/users",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin/users"
+    },
+    {
+      "label": "admin /admin/analysis",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin/analysis"
+    },
+    {
+      "label": "admin /admin/payments",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin/payments"
+    },
+    {
+      "label": "admin /admin/site-settings",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/admin/site-settings"
+    },
+    {
+      "label": "siswa /student",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/student"
+    },
+    {
+      "label": "siswa /student/learning",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/student/learning"
+    },
+    {
+      "label": "siswa /student/courses",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/student/courses"
+    },
+    {
+      "label": "siswa /student/tryouts",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/student/tryouts"
+    },
+    {
+      "label": "siswa /student/schedule",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/student/schedule"
+    },
+    {
+      "label": "siswa /student/payments",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/student/payments"
+    },
+    {
+      "label": "tentor /tutor",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/tutor"
+    },
+    {
+      "label": "tentor /tutor/bidding",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/tutor/bidding"
+    },
+    {
+      "label": "tentor /tutor/calendar",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/tutor/calendar"
+    },
+    {
+      "label": "tentor /tutor/classes",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/tutor/classes"
+    },
+    {
+      "label": "tentor /tutor/materials",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/tutor/materials"
+    },
+    {
+      "label": "proktor /proctor",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/proctor"
+    },
+    {
+      "label": "proktor /proctor/monitoring",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/proctor/monitoring"
+    },
+    {
+      "label": "proktor /proctor/analytics",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/proctor/analytics"
+    },
+    {
+      "label": "proktor /proctor/trainings",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/proctor/trainings"
+    },
+    {
+      "label": "proktor /proctor/attendance",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/proctor/attendance"
+    },
+    {
+      "label": "proktor /proctor/weakness",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/proctor/weakness"
+    },
+    {
+      "label": "proktor /proctor/reports",
+      "status": "OK",
+      "sw": 1920,
+      "iw": 1920,
+      "bw": 1920,
+      "url": "/proctor/reports"
+    }
+  ],
+  "cbt_iphone": [
+    {
+      "status": "ERROR Page.goto: Timeout 20000ms exceeded.\nCall log:\n  - navigating to \"https://web-config-studio.preview.emergentagent.com/student/tryouts\", waiting until \"domcontentloaded\"\n"
+    }
+  ]
+}

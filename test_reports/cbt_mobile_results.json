@@ -1,0 +1,52 @@
+[
+  {
+    "label": "iphone14",
+    "testids": {
+      "exam-fs-start": false,
+      "exam-start-button": false,
+      "m-prev-question": true,
+      "m-next-question": true,
+      "m-flag-question": true,
+      "m-open-palette": true,
+      "exam-font-plus": false,
+      "exam-font-minus": false,
+      "exam-timer": true,
+      "exam-submit": false
+    },
+    "after": {
+      "m-prev-question": true,
+      "m-next-question": true,
+      "m-flag-question": true,
+      "m-open-palette": true,
+      "exam-timer": true,
+      "exam-submit": false,
+      "exam-font-plus": false
+    },
+    "overflow": 0
+  },
+  {
+    "label": "desktop",
+    "testids": {
+      "exam-fs-start": false,
+      "exam-start-button": false,
+      "m-prev-question": true,
+      "m-next-question": true,
+      "m-flag-question": true,
+      "m-open-palette": true,
+      "exam-font-plus": false,
+      "exam-font-minus": false,
+      "exam-timer": true,
+      "exam-submit": false
+    },
+    "after": {
+      "m-prev-question": true,
+      "m-next-question": true,
+      "m-flag-question": true,
+      "m-open-palette": true,
+      "exam-timer": true,
+      "exam-submit": false,
+      "exam-font-plus": false
+    },
+    "overflow": 0
+  }
+]
