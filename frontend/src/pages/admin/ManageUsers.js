@@ -114,7 +114,7 @@ export default function ManageUsers() {
   return (
     <div data-testid="manage-users">
       <PageHeader title="Pengguna & Sekolah Mitra" subtitle="Verifikasi akun, atur peran, dan tautkan sekolah. Proktor hanya melihat siswa sekolahnya."
-        actions={<div className="flex gap-2">
+        actions={<div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setSchoolOpen(true)} className="rounded-full hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="add-school-btn"><School className="h-4 w-4" /> Tambah Sekolah</Button>
           <Button onClick={() => { setForm(EMPTY); setOpen(true); }} className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" data-testid="add-user-btn"><Plus className="h-4 w-4" /> Tambah Pengguna</Button>
         </div>} />
@@ -130,7 +130,7 @@ export default function ManageUsers() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="mb-4">
-        <TabsList data-testid="user-tabs">
+        <TabsList className="max-w-full overflow-x-auto justify-start" data-testid="user-tabs">
           <TabsTrigger value="pending" data-testid="tab-pending">Menunggu {pendingCount > 0 && <span className="ml-1.5 rounded-full bg-[#FEF3C7] text-[#B45309] px-1.5 text-[10px] font-bold">{pendingCount}</span>}</TabsTrigger>
           <TabsTrigger value="all">Semua</TabsTrigger>
           <TabsTrigger value="tutor">Tentor</TabsTrigger>

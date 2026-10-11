@@ -99,9 +99,9 @@ export default function CourseContent() {
           </div>
 
           {/* Lessons */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-semibold text-[#0A1128] flex items-center gap-2"><Video className="h-5 w-5 text-[#0E7490]" /> Video Pembelajaran</h2>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button onClick={() => { setZipResult(null); setZipOpen(true); }} variant="outline" className="rounded-full border-[#CBD5E1] text-[#475569] hover:bg-[#E6F5F8] hover:text-[#0E7490]" data-testid="import-zip-btn"><FileArchive className="h-4 w-4" /> Impor ZIP</Button>
               <Button onClick={() => { setForm(EMPTY); setOpen(true); }} className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" data-testid="add-lesson-btn"><Plus className="h-4 w-4" /> Tambah Pelajaran</Button>
             </div>
@@ -128,7 +128,7 @@ export default function CourseContent() {
           )}
 
           {/* Exercises */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-semibold text-[#0A1128] flex items-center gap-2"><FileText className="h-5 w-5 text-[#C9A227]" /> Latihan Soal Bernilai</h2>
             <Button onClick={() => { setExForm({ title: "", duration_minutes: 15 }); setExOpen(true); }} className="rounded-full bg-[#C9A227] hover:bg-[#A9871C] text-[#0A1128] font-semibold" data-testid="add-exercise-btn"><Plus className="h-4 w-4" /> Tambah Latihan</Button>
           </div>

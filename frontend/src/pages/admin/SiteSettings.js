@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 function Section({ icon: Icon, title, desc, children }) {
   return (
-    <section className="bg-white rounded-2xl border border-[#E2E8F0] p-5 sm:p-6">
+    <section className="bg-white rounded-2xl border border-[#E2E8F0] p-5 sm:p-6 min-w-0">
       <div className="flex items-start gap-3 mb-5">
         <div className="h-9 w-9 rounded-lg bg-[#E6F5F8] flex items-center justify-center shrink-0"><Icon className="h-4 w-4 text-[#0E7490]" /></div>
         <div><h2 className="font-bold text-[#0A1128]">{title}</h2><p className="text-xs text-[#475569] mt-0.5">{desc}</p></div>
@@ -149,7 +149,7 @@ export default function SiteSettings() {
   return (
     <div className="space-y-6 pb-24" data-testid="site-settings-page">
       <PageHeader title="Pengaturan Website" subtitle="Atur nama, logo, ikon tab browser, gambar, dan loading screen website." />
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6 [&>*]:min-w-0">
         <Section icon={Globe} title="Identitas Website" desc="Tampil di header, footer, login, dashboard, dan judul tab browser.">
           <div>
             <Label className="text-[#0A1128]">Nama Website</Label>

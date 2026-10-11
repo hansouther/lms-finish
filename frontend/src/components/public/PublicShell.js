@@ -12,10 +12,10 @@ export function PublicHeader() {
   }, []);
   return (
     <header className={`fixed top-0 inset-x-0 z-50 transition-colors duration-200 ${scrolled ? "bg-white/80 backdrop-blur-xl border-b border-[#E2E8F0]" : "bg-white/70 backdrop-blur-xl border-b border-[#E2E8F0]"}`}>
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5" data-testid="public-logo">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-2">
+        <Link to="/" className="flex items-center gap-2.5 min-w-0" data-testid="public-logo">
           <SiteLogoMark className="h-9 w-9 rounded-xl bg-[#0E7490] shadow-md shadow-[#0E7490]/30" iconClass="h-5 w-5 text-white" />
-          <span className="font-head font-bold text-[#0A1128] text-lg"><SiteName /></span>
+          <span className="font-head font-bold text-[#0A1128] text-base sm:text-lg truncate"><SiteName /></span>
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#475569]">
           <Link to="/" className="hover:text-[#0E7490] transition-colors duration-200">Beranda</Link>
@@ -23,9 +23,9 @@ export function PublicHeader() {
           <Link to="/kalender" className="hover:text-[#0E7490] transition-colors duration-200" data-testid="nav-kalender">Kalender</Link>
           <Link to="/berita" className="hover:text-[#0E7490] transition-colors duration-200" data-testid="nav-berita">Berita</Link>
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <Link to="/login"><Button variant="ghost" className="text-[#475569] hover:text-[#0E7490] hover:bg-[#E6F5F8]" data-testid="public-login-btn">Masuk</Button></Link>
-          <Link to="/register"><Button className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74] px-5" data-testid="public-register-btn">Daftar Gratis</Button></Link>
+          <Link to="/register"><Button className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74] px-4 sm:px-5" data-testid="public-register-btn">Daftar Gratis</Button></Link>
         </div>
       </div>
     </header>

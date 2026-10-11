@@ -275,9 +275,9 @@ export default function TryoutBuilder() {
             <div key={q.id} className={`bg-white rounded-xl border p-5 transition-colors duration-200 ${selected.has(q.id) ? "border-[#0E7490] ring-1 ring-[#0E7490]/30" : "border-[#E2E8F0]"}`} data-testid={`question-${q.id}`}>
               <div className="flex items-start gap-3">
                 <Checkbox checked={selected.has(q.id)} onCheckedChange={() => toggleSelect(q.id)} className="mt-1 shrink-0" data-testid={`select-question-${q.id}`} />
-                <div className="flex-1 flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0 flex flex-col sm:flex-row items-start justify-between gap-4">
+                <div className="flex-1 min-w-0 w-full">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-[#E6F5F8] text-[#0E7490] px-2.5 py-0.5 text-xs font-bold">#{i + 1}</span>
                     <span className="text-xs text-[#94A3B8]">{typeLabel(q.type)} · {q.points} poin</span>
                     <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: `${COMP_COLOR[q.competency || "umum"]}1A`, color: COMP_COLOR[q.competency || "umum"] }} data-testid={`question-competency-${q.id}`}>{COMP_LABEL[q.competency || "umum"]}</span>

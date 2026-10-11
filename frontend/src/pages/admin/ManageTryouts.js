@@ -56,7 +56,7 @@ export default function ManageTryouts() {
   return (
     <div data-testid="manage-tryouts">
       <PageHeader title="Bank Soal & Try Out" subtitle="Buat paket Try Out, kelola soal & kunci jawaban, atur waktu, dan lihat hasil."
-        actions={<div className="flex gap-2">
+        actions={<div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setDupOpen(true)} className="rounded-full hover:bg-[#F3E8FF] hover:text-[#7C3AED]" data-testid="open-duplicates"><CopyX className="h-4 w-4" /> Cek Duplikat Soal</Button>
           <Button onClick={openNew} className="rounded-full bg-[#0E7490] hover:bg-[#0B5C74]" data-testid="add-tryout-btn"><Plus className="h-4 w-4" /> Buat Try Out</Button>
         </div>} />
